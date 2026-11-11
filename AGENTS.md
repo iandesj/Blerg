@@ -40,3 +40,4 @@ Add build, test, and lint commands here after you choose a stack.
 
 - `docs/README.md` — documentation index
 - `docs/architecture.md` — system overview (stub until filled in)
+- `.agents/skills/boilerplate/SKILL.md` — portable Agent Skills workflow ([agentskills.io](https://agentskills.io/)); auto-discovered in many harnesses via `.agents/skills/`

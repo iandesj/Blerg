@@ -18,6 +18,18 @@ Short description of what this project does and who it is for.
 | `CHANGELOG.md` | Notable changes by version |
 | `devbox.json` | Pin dev tools via Devbox |
 | `.pre-commit-config.yaml` | Local git hooks (Gitleaks, Lizard, sanity checks) |
+| `.agents/skills/boilerplate/` | Portable [Agent Skill](https://agentskills.io/) (cross-client discovery) |
+
+## Agent skill
+
+The `boilerplate` skill ([`.agents/skills/boilerplate/SKILL.md`](.agents/skills/boilerplate/SKILL.md)) documents how to scaffold, customize, and extend this template. It lives under **`.agents/skills/`**, the interop path Cursor, Copilot, Codex, and [Skills CLI](https://skills.sh/) scan (see [`.agents/README.md`](.agents/README.md)):
+
+```bash
+# After publishing this repo to GitHub:
+npx skills add <owner>/<repo>@boilerplate -g -y
+```
+
+See [`.agents/skills/README.md`](.agents/skills/README.md) for paths and global install.
 
 ## Development
 
