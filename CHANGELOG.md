@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Matt Pocock engineering skills bundle under `.agents/skills/` (`to-spec`, `to-tickets`, `grill-with-docs`, `implement`, `code-review`, `retro`, `wayfinder`, `ask-matt`) with `skills-lock.json`.
 - `triage` skill (mattpocock/skills) and `docs/agents/triage-labels.md` with GitHub triage labels.
 - `docs/agents/` (GitHub issue tracker, single-context domain rules) and `## Agent skills` in `AGENTS.md` for engineering skills setup.
 - `.agents/skills/boilerplate` Agent Skill (agentskills.io) under cross-client `.agents/skills/` layout.
