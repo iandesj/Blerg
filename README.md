@@ -17,7 +17,7 @@ Short description of what this project does and who it is for.
 | `AGENTS.md` | Instructions for AI coding assistants |
 | `CHANGELOG.md` | Notable changes by version |
 | `devbox.json` | Pin dev tools via Devbox |
-| `.pre-commit-config.yaml` | Local git hooks (includes Gitleaks) |
+| `.pre-commit-config.yaml` | Local git hooks (Gitleaks, Lizard, sanity checks) |
 
 ## Development
 

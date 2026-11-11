@@ -25,3 +25,22 @@ repos:
     hooks:
       - id: actionlint
         # Remove this repo block if you do not use GitHub Actions
+
+  - repo: local
+    hooks:
+      - id: lizard-complexity
+        name: Lizard complexity
+        entry: lizard
+        language: python
+        additional_dependencies:
+          - lizard==1.26.0
+        args:
+          - --warnings_only
+          - -C
+          - "10"
+          - --length
+          - "80"
+          - -a
+          - "5"
+        files: \.(c|cc|cpp|cxx|h|hpp|hxx|cs|go|java|js|jsx|kt|kts|php|py|rb|rs|scala|swift|ts|tsx|vue)$
+        exclude: ^(vendor/|node_modules/|\.venv/)
