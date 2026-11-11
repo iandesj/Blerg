@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `blerg find` ranks indexed posts by keyword overlap (title, summary, categories) and prints one human-readable result.
 - Go `blerg` CLI skeleton (`refresh`, `find`, `sources`) with SQLite schema for sources and posts.
 - `blerg refresh` downloads enabled feeds, parses RSS/Atom, and upserts posts by canonical URL.
 - `blerg sources list` lists manifest-backed sources.

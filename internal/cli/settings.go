@@ -6,9 +6,11 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/iandesj/blerg/internal/app"
+	"github.com/iandesj/blerg/internal/rank"
 	"github.com/spf13/cobra"
 )
 
@@ -58,7 +60,7 @@ func NewRootCommand(s Settings) *cobra.Command {
 	root.PersistentFlags().StringVar(&settings.SourcesPath, "sources", settings.SourcesPath, "Sources manifest path")
 
 	root.AddCommand(newRefreshCommand(&settings))
-	root.AddCommand(newFindCommand())
+	root.AddCommand(newFindCommand(&settings))
 	root.AddCommand(newSourcesCommand(&settings))
 	return root
 }
@@ -88,15 +90,39 @@ func newRefreshCommand(s *Settings) *cobra.Command {
 	}
 }
 
-func newFindCommand() *cobra.Command {
+func newFindCommand(s *Settings) *cobra.Command {
 	return &cobra.Command{
 		Use:   "find [query]",
 		Short: "Return the single best-matching indexed post for a query",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("find: not implemented yet (see issue #4)")
+			a, err := s.openApp(cmd.Context())
+			if err != nil {
+				return err
+			}
+			defer func() { _ = a.Close() }()
+
+			match, err := a.Find(cmd.Context(), strings.Join(args, " "))
+			if err != nil {
+				return err
+			}
+			_, _ = fmt.Fprint(cmd.OutOrStdout(), formatFindHuman(match))
+			return nil
 		},
 	}
+}
+
+func formatFindHuman(p rank.Post) string {
+	var b strings.Builder
+	_, _ = fmt.Fprintf(&b, "Title: %s\n", p.Title)
+	_, _ = fmt.Fprintf(&b, "URL: %s\n", p.URL)
+	_, _ = fmt.Fprintf(&b, "Source: %s\n", p.SourceName)
+	if p.PublishedAt != nil {
+		_, _ = fmt.Fprintf(&b, "Published: %s\n", p.PublishedAt.UTC().Format("2006-01-02"))
+	} else {
+		_, _ = fmt.Fprintln(&b, "Published: unknown")
+	}
+	return b.String()
 }
 
 func newSourcesCommand(s *Settings) *cobra.Command {

@@ -171,6 +171,42 @@ func (db *DB) SetSourceLastError(ctx context.Context, sourceID int64, message st
 	return err
 }
 
+type PostWithSource struct {
+	Post
+	SourceName string
+}
+
+func (db *DB) ListPostsWithSources(ctx context.Context) ([]PostWithSource, error) {
+	rows, err := db.sql.QueryContext(ctx, `
+		SELECT p.id, p.source_id, p.title, p.url, p.published_at,
+		       COALESCE(p.summary, ''), COALESCE(p.categories, ''), s.name
+		FROM posts p
+		JOIN sources s ON s.id = p.source_id
+		ORDER BY p.id
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	var out []PostWithSource
+	for rows.Next() {
+		var row PostWithSource
+		var pub sql.NullString
+		if err := rows.Scan(&row.ID, &row.SourceID, &row.Title, &row.URL, &pub,
+			&row.Summary, &row.Categories, &row.SourceName); err != nil {
+			return nil, err
+		}
+		if pub.Valid && pub.String != "" {
+			if t, err := time.Parse(time.RFC3339, pub.String); err == nil {
+				row.PublishedAt = &t
+			}
+		}
+		out = append(out, row)
+	}
+	return out, rows.Err()
+}
+
 func (db *DB) ListPosts(ctx context.Context) ([]Post, error) {
 	rows, err := db.sql.QueryContext(ctx, `
 		SELECT id, source_id, title, url, published_at, COALESCE(summary, ''), COALESCE(categories, '')
