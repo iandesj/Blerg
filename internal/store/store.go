@@ -156,6 +156,21 @@ func (db *DB) UpsertPost(ctx context.Context, draft PostDraft) error {
 	return err
 }
 
+func (db *DB) SetSourceRefreshSuccess(ctx context.Context, sourceID int64) error {
+	now := time.Now().UTC().Format(time.RFC3339)
+	_, err := db.sql.ExecContext(ctx, `
+		UPDATE sources SET last_success_at = ?, last_error = '' WHERE id = ?
+	`, now, sourceID)
+	return err
+}
+
+func (db *DB) SetSourceLastError(ctx context.Context, sourceID int64, message string) error {
+	_, err := db.sql.ExecContext(ctx, `
+		UPDATE sources SET last_error = ? WHERE id = ?
+	`, message, sourceID)
+	return err
+}
+
 func (db *DB) ListPosts(ctx context.Context) ([]Post, error) {
 	rows, err := db.sql.QueryContext(ctx, `
 		SELECT id, source_id, title, url, published_at, COALESCE(summary, ''), COALESCE(categories, '')

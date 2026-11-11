@@ -74,28 +74,15 @@ func newRefreshCommand(s *Settings) *cobra.Command {
 			}
 			defer func() { _ = a.Close() }()
 
-			sources, err := a.ListSources(cmd.Context())
+			stats, err := a.Refresh(cmd.Context())
 			if err != nil {
 				return err
 			}
-			var failures int
-			for _, src := range sources {
-				if !src.Enabled {
-					continue
-				}
-				resp, err := a.FetchFeed(cmd.Context(), src.FeedURL)
-				if err != nil {
-					failures++
-					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "fetch %s: %v\n", src.Name, err)
-					continue
-				}
-				_, _ = io.Copy(io.Discard, resp.Body)
-				_ = resp.Body.Close()
+			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "refresh: indexed %d post(s) from %d enabled source(s)\n",
+				stats.PostsIndexed, stats.SourcesEnabled-stats.SourcesFailed)
+			if stats.SourcesFailed > 0 {
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "refresh: %d source(s) failed\n", stats.SourcesFailed)
 			}
-			if failures > 0 {
-				return fmt.Errorf("refresh: %d feed fetch(es) failed (post indexing still pending issue #3)", failures)
-			}
-			_, _ = fmt.Fprintln(cmd.OutOrStdout(), "refresh: fetched enabled feeds (RSS parsing pending issue #3)")
 			return nil
 		},
 	}
