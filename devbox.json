@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
+  "packages": [
+    "git@latest",
+    "pre-commit@latest",
+    "gitleaks@8.30.1"
+  ],
+  "shell": {
+    "init_hook": [
+      "echo 'Devbox shell ready. Run: pre-commit install'"
+    ],
+    "scripts": {
+      "hooks": "pre-commit run --all-files"
+    }
+  }
+}
