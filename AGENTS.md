@@ -36,8 +36,19 @@ Add build, test, and lint commands here after you choose a stack.
 - Ask before large refactors, dependency upgrades, or license changes.
 - Do not disable pre-commit hooks or skip CI without explicit approval.
 
+## Agent skills
+
+### Issue tracker
+
+Work is tracked in GitHub Issues on `iandesj/boilerplate` via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context layout: root `GLOSSARY.md` (when present) and `docs/adr/`. See `docs/agents/domain.md`.
+
 ## References
 
 - `docs/README.md` — documentation index
 - `docs/architecture.md` — system overview (stub until filled in)
+- `docs/agents/` — issue tracker and domain-doc rules for engineering skills
 - `.agents/skills/boilerplate/SKILL.md` — portable Agent Skills workflow ([agentskills.io](https://agentskills.io/)); auto-discovered in many harnesses via `.agents/skills/`

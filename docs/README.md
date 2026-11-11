@@ -7,8 +7,9 @@ Place long-form documentation here. The root `README.md` should stay short and l
 | Document | Contents |
 |----------|----------|
 | [architecture.md](architecture.md) | Components, boundaries, data flow |
+| [agents/](agents/) | Issue tracker + domain-doc rules for Matt Pocock engineering skills |
+| [adr/](adr/) | Architecture decision records |
 | `runbooks/` | Operational procedures (deploy, rollback, incident) |
-| `adr/` | Architecture decision records (optional) |
 
 ## Writing guidelines
 
