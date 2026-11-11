@@ -1,0 +1,4 @@
+sources:
+  - name: Example Engineering Blog
+    feed_url: https://example.com/feed.xml
+    enabled: true

@@ -4,8 +4,8 @@ This file orients automated coding assistants working in this repository.
 
 ## Project
 
-- **Purpose:** (Describe the product or library in one paragraph.)
-- **Stage:** Greenfield template — add language-specific tooling when you scaffold the app.
+- **Purpose:** Blerg is a CLI that ingests engineering-blog RSS/Atom feeds and returns a single best-matching post for a keyword query.
+- **Stage:** MVP in progress (Go CLI, SQLite index).
 
 ## Conventions
 
@@ -29,7 +29,11 @@ Run inside `devbox shell` when Devbox is configured:
 pre-commit run --all-files   # gitleaks, formatting, and sanity checks
 ```
 
-Add build, test, and lint commands here after you choose a stack.
+```bash
+go build -o bin/blerg ./cmd/blerg
+go test ./...
+go vet ./...
+```
 
 ## Boundaries
 
@@ -40,7 +44,7 @@ Add build, test, and lint commands here after you choose a stack.
 
 ### Issue tracker
 
-Work is tracked in GitHub Issues on `iandesj/boilerplate` via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+Work is tracked in GitHub Issues on `iandesj/Blerg` via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

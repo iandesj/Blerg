@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Go `blerg` CLI skeleton (`refresh`, `find`, `sources`) with SQLite schema for sources and posts.
+- YAML sources manifest loader (`config/sources.example.yaml`, `testdata/sources.yaml`).
+- Integration test harness at the CLI seam (injectable HTTP, temp database).
+
 - Matt Pocock engineering skills bundle under `.agents/skills/` (`to-spec`, `to-tickets`, `grill-with-docs`, `implement`, `code-review`, `retro`, `wayfinder`, `ask-matt`) with `skills-lock.json`.
 - `triage` skill (mattpocock/skills) and `docs/agents/triage-labels.md` with GitHub triage labels.
 - `docs/agents/` (GitHub issue tracker, single-context domain rules) and `## Agent skills` in `AGENTS.md` for engineering skills setup.

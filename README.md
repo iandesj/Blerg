@@ -1,13 +1,20 @@
-# Project Name
+# Blerg
 
-Short description of what this project does and who it is for.
+CLI that indexes engineering-blog feeds and finds **one** relevant post for your keywords.
 
 ## Getting started
 
 1. Install [Devbox](https://www.jetify.com/devbox) (optional but recommended for a reproducible shell).
 2. Run `devbox shell` to enter the development environment.
 3. Install pre-commit hooks: `pre-commit install`
-4. Follow language-specific setup in [docs/](docs/) once you add application code.
+4. Build and run the CLI:
+
+```bash
+go build -o bin/blerg ./cmd/blerg
+./bin/blerg --help
+```
+
+Copy `config/sources.example.yaml` when you need a manifest for future `refresh` / `find` work.
 
 ## Repository layout
 
