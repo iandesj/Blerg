@@ -81,7 +81,7 @@ func newRefreshCommand(s *Settings) *cobra.Command {
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "refresh: indexed %d post(s) from %d enabled source(s)\n",
 				stats.PostsIndexed, stats.SourcesEnabled-stats.SourcesFailed)
 			if stats.SourcesFailed > 0 {
-				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "refresh: %d source(s) failed\n", stats.SourcesFailed)
+				_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "refresh: %d source(s) failed (other enabled sources still indexed)\n", stats.SourcesFailed)
 			}
 			return nil
 		},

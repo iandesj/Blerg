@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `blerg refresh` exits 0 when at least one enabled source succeeds; non-zero only when every enabled source fails (partial failures on stderr).
+- Devbox `go@1.25` aligned with `go.mod` (required by `gofeed` v1.5).
+
 ### Added
 
 - Go `blerg` CLI skeleton (`refresh`, `find`, `sources`) with SQLite schema for sources and posts.

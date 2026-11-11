@@ -2,10 +2,10 @@ package app
 
 import (
 	"context"
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/iandesj/blerg/internal/feed"
 	"github.com/iandesj/blerg/internal/store"
@@ -32,7 +32,9 @@ func (a *App) Refresh(ctx context.Context) (RefreshStats, error) {
 		indexed, err := a.refreshSource(ctx, src)
 		if err != nil {
 			stats.SourcesFailed++
-			_ = a.db.SetSourceLastError(ctx, src.ID, err.Error())
+			if setErr := a.db.SetSourceLastError(ctx, src.ID, err.Error()); setErr != nil {
+			return stats, setErr
+		}
 			continue
 		}
 		stats.PostsIndexed += indexed
@@ -64,7 +66,7 @@ func (a *App) refreshSource(ctx context.Context, src Source) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("read %s: %w", src.Name, err)
 	}
-	entries, err := feed.Parse(strings.NewReader(string(body)))
+	entries, err := feed.Parse(bytes.NewReader(body))
 	if err != nil {
 		return 0, fmt.Errorf("parse %s: %w", src.Name, err)
 	}

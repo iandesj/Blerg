@@ -29,6 +29,8 @@ Run inside `devbox shell` when Devbox is configured:
 pre-commit run --all-files   # gitleaks, formatting, and sanity checks
 ```
 
+Requires Go 1.25+ (see `go` line in `go.mod`; use `devbox shell` for the pinned toolchain).
+
 ```bash
 go build -o bin/blerg ./cmd/blerg
 go test ./...

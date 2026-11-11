@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<rss version="2.0">
+  <channel>
+    <title>Fixture</title>
+    <item>
+      <title>Post One</title>
+      <link>https://example.com/posts/one</link>
+      <pubDate>Mon, 01 Jan 2024 12:00:00 GMT</pubDate>
+      <description>Summary one</description>
+      <category>go</category>
+      <category>sqlite</category>
+    </item>
+    <item>
+      <title>Post Two</title>
+      <link>https://example.com/posts/two</link>
+      <description>Summary two</description>
+    </item>
+  </channel>
+</rss>

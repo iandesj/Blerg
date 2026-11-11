@@ -9,30 +9,16 @@ import (
 	"github.com/iandesj/blerg/internal/feed"
 )
 
-const sampleRSS = `<?xml version="1.0"?>
-<rss version="2.0">
-  <channel>
-    <title>Fixture</title>
-    <item>
-      <title>Post One</title>
-      <link>https://example.com/posts/one</link>
-      <pubDate>Mon, 01 Jan 2024 12:00:00 GMT</pubDate>
-      <description>Summary one</description>
-      <category>go</category>
-      <category>sqlite</category>
-    </item>
-    <item>
-      <title>Post Two</title>
-      <link>https://example.com/posts/two</link>
-      <description>Summary two</description>
-    </item>
-  </channel>
-</rss>`
-
 func TestParseRSSItems(t *testing.T) {
 	t.Parallel()
 
-	entries, err := feed.Parse(strings.NewReader(sampleRSS))
+	f, err := os.Open("../../testdata/feeds/sample-two-items.rss")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = f.Close() }()
+
+	entries, err := feed.Parse(f)
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}
@@ -72,5 +58,14 @@ func TestParseAtomFromFile(t *testing.T) {
 	}
 	if entries[0].Title != "Atom Post" || entries[0].URL != "https://example.com/atom/1" {
 		t.Fatalf("entry = %+v", entries[0])
+	}
+}
+
+func TestParseRejectsInvalidXML(t *testing.T) {
+	t.Parallel()
+
+	_, err := feed.Parse(strings.NewReader("<not-a-feed"))
+	if err == nil {
+		t.Fatal("expected error for invalid input")
 	}
 }

@@ -67,15 +67,17 @@ func TestCLIRefreshUsesInjectableHTTPAndCannedFeed(t *testing.T) {
 	dbPath := filepath.Join(dir, "blerg.db")
 	manifest := filepath.Join("testdata", "sources.yaml")
 
-	const cannedRSS = `<?xml version="1.0"?><rss version="2.0"><channel><title>Fixture</title>
-    <item><title>Smoke</title><link>https://example.com/smoke</link></item></channel></rss>`
+	cannedRSS, err := os.ReadFile(filepath.Join("testdata", "feeds", "smoke-item.rss"))
+	if err != nil {
+		t.Fatal(err)
+	}
 	transport := roundTripFunc(func(req *http.Request) (*http.Response, error) {
 		if !strings.Contains(req.Header.Get("User-Agent"), "Blerg") {
 			t.Errorf("User-Agent = %q, want substring Blerg", req.Header.Get("User-Agent"))
 		}
 		return &http.Response{
 			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(strings.NewReader(cannedRSS)),
+			Body:       io.NopCloser(bytes.NewReader(cannedRSS)),
 			Header:     make(http.Header),
 			Request:    req,
 		}, nil

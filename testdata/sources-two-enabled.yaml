@@ -1,0 +1,7 @@
+sources:
+  - name: Fixture Engineering Blog
+    feed_url: https://example.com/engineering/feed.xml
+    enabled: true
+  - name: Second Engineering Blog
+    feed_url: https://example.com/second/feed.xml
+    enabled: true
