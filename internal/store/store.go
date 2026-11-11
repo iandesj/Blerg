@@ -61,7 +61,7 @@ func (db *DB) migrate() error {
 	return nil
 }
 
-type SourceRow struct {
+type Source struct {
 	ID            int64
 	Name          string
 	FeedURL       string
@@ -90,7 +90,7 @@ func (db *DB) UpsertSource(ctx context.Context, name, feedURL string, enabled bo
 	return id, err
 }
 
-func (db *DB) ListSources(ctx context.Context) ([]SourceRow, error) {
+func (db *DB) ListSources(ctx context.Context) ([]Source, error) {
 	rows, err := db.sql.QueryContext(ctx, `
 		SELECT id, name, feed_url, enabled, last_success_at, COALESCE(last_error, '')
 		FROM sources ORDER BY name
@@ -98,11 +98,11 @@ func (db *DB) ListSources(ctx context.Context) ([]SourceRow, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
-	var out []SourceRow
+	var out []Source
 	for rows.Next() {
-		var row SourceRow
+		var row Source
 		var en int
 		var lastSuccess sql.NullString
 		if err := rows.Scan(&row.ID, &row.Name, &row.FeedURL, &en, &lastSuccess, &row.LastError); err != nil {
@@ -119,7 +119,7 @@ func (db *DB) ListSources(ctx context.Context) ([]SourceRow, error) {
 	return out, rows.Err()
 }
 
-type PostRow struct {
+type Post struct {
 	ID          int64
 	SourceID    int64
 	Title       string
@@ -129,10 +129,19 @@ type PostRow struct {
 	Categories  string
 }
 
-func (db *DB) UpsertPost(ctx context.Context, sourceID int64, title, url string, publishedAt *time.Time, summary, categories string) error {
+type PostDraft struct {
+	SourceID    int64
+	Title       string
+	URL         string
+	PublishedAt *time.Time
+	Summary     string
+	Categories  string
+}
+
+func (db *DB) UpsertPost(ctx context.Context, draft PostDraft) error {
 	var pub string
-	if publishedAt != nil {
-		pub = publishedAt.UTC().Format(time.RFC3339)
+	if draft.PublishedAt != nil {
+		pub = draft.PublishedAt.UTC().Format(time.RFC3339)
 	}
 	_, err := db.sql.ExecContext(ctx, `
 		INSERT INTO posts (source_id, title, url, published_at, summary, categories)
@@ -143,11 +152,11 @@ func (db *DB) UpsertPost(ctx context.Context, sourceID int64, title, url string,
 			published_at = excluded.published_at,
 			summary = excluded.summary,
 			categories = excluded.categories
-	`, sourceID, title, url, pub, summary, categories)
+	`, draft.SourceID, draft.Title, draft.URL, pub, draft.Summary, draft.Categories)
 	return err
 }
 
-func (db *DB) ListPosts(ctx context.Context) ([]PostRow, error) {
+func (db *DB) ListPosts(ctx context.Context) ([]Post, error) {
 	rows, err := db.sql.QueryContext(ctx, `
 		SELECT id, source_id, title, url, published_at, COALESCE(summary, ''), COALESCE(categories, '')
 		FROM posts ORDER BY id
@@ -155,11 +164,11 @@ func (db *DB) ListPosts(ctx context.Context) ([]PostRow, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
-	var out []PostRow
+	var out []Post
 	for rows.Next() {
-		var row PostRow
+		var row Post
 		var pub sql.NullString
 		if err := rows.Scan(&row.ID, &row.SourceID, &row.Title, &row.URL, &pub, &row.Summary, &row.Categories); err != nil {
 			return nil, err

@@ -10,8 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Go `blerg` CLI skeleton (`refresh`, `find`, `sources`) with SQLite schema for sources and posts.
+- `blerg sources list` and fetch-only `blerg refresh` (RSS indexing tracked in issue #3).
 - YAML sources manifest loader (`config/sources.example.yaml`, `testdata/sources.yaml`).
-- Integration test harness at the CLI seam (injectable HTTP, temp database).
+- Integration tests at the CLI seam (Cobra + subprocess, injectable HTTP, canned RSS).
+- `golangci-lint` configuration and documented lint command.
 
 - Matt Pocock engineering skills bundle under `.agents/skills/` (`to-spec`, `to-tickets`, `grill-with-docs`, `implement`, `code-review`, `retro`, `wayfinder`, `ask-matt`) with `skills-lock.json`.
 - `triage` skill (mattpocock/skills) and `docs/agents/triage-labels.md` with GitHub triage labels.

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/iandesj/blerg/internal/config"
 	"github.com/iandesj/blerg/internal/store"
@@ -22,6 +21,9 @@ type Options struct {
 	HTTPClient  HTTPClient
 	UserAgent   string
 }
+
+type Source = store.Source
+type Post = store.Post
 
 type App struct {
 	db          *store.DB
@@ -41,7 +43,7 @@ func New(ctx context.Context, opts Options) (*App, error) {
 		return nil, fmt.Errorf("http client is required")
 	}
 	if opts.UserAgent == "" {
-		opts.UserAgent = "blerg"
+		opts.UserAgent = DefaultUserAgent
 	}
 	if err := os.MkdirAll(filepath.Dir(opts.DBPath), 0o755); err != nil {
 		return nil, err
@@ -82,66 +84,16 @@ func (a *App) syncSources(ctx context.Context) error {
 	return nil
 }
 
-type Source struct {
-	ID            int64
-	Name          string
-	FeedURL       string
-	Enabled       bool
-	LastSuccessAt *time.Time
-	LastError     string
-}
-
 func (a *App) ListSources(ctx context.Context) ([]Source, error) {
-	rows, err := a.db.ListSources(ctx)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]Source, len(rows))
-	for i, r := range rows {
-		out[i] = Source{
-			ID:            r.ID,
-			Name:          r.Name,
-			FeedURL:       r.FeedURL,
-			Enabled:       r.Enabled,
-			LastSuccessAt: r.LastSuccessAt,
-			LastError:     r.LastError,
-		}
-	}
-	return out, nil
+	return a.db.ListSources(ctx)
 }
 
-type Post struct {
-	ID          int64
-	SourceID    int64
-	Title       string
-	URL         string
-	PublishedAt *time.Time
-	Summary     string
-	Categories  string
-}
-
-func (a *App) UpsertPost(ctx context.Context, sourceID int64, title, url string, publishedAt *time.Time, summary, categories string) error {
-	return a.db.UpsertPost(ctx, sourceID, title, url, publishedAt, summary, categories)
+func (a *App) UpsertPost(ctx context.Context, draft store.PostDraft) error {
+	return a.db.UpsertPost(ctx, draft)
 }
 
 func (a *App) ListPosts(ctx context.Context) ([]Post, error) {
-	rows, err := a.db.ListPosts(ctx)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]Post, len(rows))
-	for i, r := range rows {
-		out[i] = Post{
-			ID:          r.ID,
-			SourceID:    r.SourceID,
-			Title:       r.Title,
-			URL:         r.URL,
-			PublishedAt: r.PublishedAt,
-			Summary:     r.Summary,
-			Categories:  r.Categories,
-		}
-	}
-	return out, nil
+	return a.db.ListPosts(ctx)
 }
 
 func (a *App) HTTPGet(ctx context.Context, rawURL string) (*http.Response, error) {
@@ -151,4 +103,8 @@ func (a *App) HTTPGet(ctx context.Context, rawURL string) (*http.Response, error
 	}
 	req.Header.Set("User-Agent", a.userAgent)
 	return a.httpClient.Do(req)
+}
+
+func (a *App) FetchFeed(ctx context.Context, feedURL string) (*http.Response, error) {
+	return a.HTTPGet(ctx, feedURL)
 }

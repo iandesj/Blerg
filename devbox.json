@@ -3,7 +3,9 @@
   "packages": [
     "git@latest",
     "pre-commit@latest",
-    "gitleaks@8.30.1"
+    "gitleaks@8.30.1",
+    "golangci-lint@latest",
+    "go@1.22"
   ],
   "shell": {
     "init_hook": [

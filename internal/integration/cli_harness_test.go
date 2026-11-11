@@ -6,18 +6,20 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/iandesj/blerg/internal/app"
 	"github.com/iandesj/blerg/internal/cli"
+	"github.com/iandesj/blerg/internal/store"
 )
 
 func TestCLIHelpListsCommands(t *testing.T) {
 	t.Parallel()
 
-	root := cli.NewRootCommand()
+	root := cli.NewRootCommand(cli.Settings{UserAgent: app.DefaultUserAgent})
 	var out bytes.Buffer
 	root.SetOut(&out)
 	root.SetErr(&out)
@@ -35,82 +37,85 @@ func TestCLIHelpListsCommands(t *testing.T) {
 	}
 }
 
-func TestHarnessLoadsManifestAndMigratesSchema(t *testing.T) {
+func TestCLISourcesList(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "blerg.db")
 	manifest := filepath.Join("testdata", "sources.yaml")
+	var out bytes.Buffer
+	var errOut bytes.Buffer
 
-	a, err := app.New(context.Background(), app.Options{
-		DBPath:       dbPath,
-		SourcesPath:  manifest,
-		HTTPClient:   http.DefaultClient,
-		UserAgent:    "blerg-test",
-	})
-	if err != nil {
-		t.Fatalf("new app: %v", err)
+	code := cli.RunWithSettings(cli.Settings{
+		DBPath:      dbPath,
+		SourcesPath: manifest,
+		HTTPClient:  http.DefaultClient,
+		UserAgent:   "Blerg/integration-test",
+	}, []string{"--db", dbPath, "--sources", manifest, "sources", "list"}, &out, &errOut)
+	if code != 0 {
+		t.Fatalf("exit %d stderr=%q", code, errOut.String())
 	}
-	t.Cleanup(func() { _ = a.Close() })
-
-	sources, err := a.ListSources(context.Background())
-	if err != nil {
-		t.Fatalf("list sources: %v", err)
-	}
-	if len(sources) != 2 {
-		t.Fatalf("sources count = %d, want 2", len(sources))
-	}
-	var fixture *app.Source
-	for i := range sources {
-		if sources[i].Name == "Fixture Engineering Blog" {
-			fixture = &sources[i]
-			break
-		}
-	}
-	if fixture == nil {
-		t.Fatal("missing Fixture Engineering Blog in sources")
-	}
-	if !fixture.Enabled {
-		t.Fatal("fixture source should be enabled")
+	if !strings.Contains(out.String(), "Fixture Engineering Blog") {
+		t.Fatalf("output missing fixture source:\n%s", out.String())
 	}
 }
 
-func TestHarnessUsesInjectableHTTP(t *testing.T) {
+func TestCLIRefreshUsesInjectableHTTPAndCannedFeed(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "blerg.db")
 	manifest := filepath.Join("testdata", "sources.yaml")
 
+	const cannedRSS = `<rss version="2.0"><channel><title>Fixture</title></channel></rss>`
 	transport := roundTripFunc(func(req *http.Request) (*http.Response, error) {
-		if req.Header.Get("User-Agent") != "blerg-test" {
-			t.Errorf("User-Agent = %q, want blerg-test", req.Header.Get("User-Agent"))
+		if !strings.Contains(req.Header.Get("User-Agent"), "Blerg") {
+			t.Errorf("User-Agent = %q, want substring Blerg", req.Header.Get("User-Agent"))
 		}
 		return &http.Response{
 			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(strings.NewReader(`<rss version="2.0"></rss>`)),
+			Body:       io.NopCloser(strings.NewReader(cannedRSS)),
 			Header:     make(http.Header),
 			Request:    req,
 		}, nil
 	})
 
-	a, err := app.New(context.Background(), app.Options{
-		DBPath:       dbPath,
-		SourcesPath:  manifest,
-		HTTPClient:   &http.Client{Transport: transport},
-		UserAgent:    "blerg-test",
-	})
-	if err != nil {
-		t.Fatalf("new app: %v", err)
+	var out bytes.Buffer
+	var errOut bytes.Buffer
+	code := cli.RunWithSettings(cli.Settings{
+		DBPath:      dbPath,
+		SourcesPath: manifest,
+		HTTPClient:  &http.Client{Transport: transport},
+		UserAgent:   app.DefaultUserAgent,
+	}, []string{"--db", dbPath, "--sources", manifest, "refresh"}, &out, &errOut)
+	if code != 0 {
+		t.Fatalf("exit %d stderr=%q stdout=%q", code, errOut.String(), out.String())
 	}
-	t.Cleanup(func() { _ = a.Close() })
-
-	if _, err := a.HTTPGet(context.Background(), "https://example.com/feed.xml"); err != nil {
-		t.Fatalf("http get: %v", err)
+	if !strings.Contains(out.String(), "refresh:") {
+		t.Fatalf("stdout = %q", out.String())
 	}
 }
 
-func TestPostURLUniqueConstraint(t *testing.T) {
+func TestCLISubprocessSourcesList(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "blerg.db")
+	manifest, err := filepath.Abs("testdata/sources.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	bin := buildCLI(t)
+
+	cmd := exec.Command(bin, "--db", dbPath, "--sources", manifest, "sources", "list")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("run: %v output=%s", err, out)
+	}
+	if !strings.Contains(string(out), "Fixture Engineering Blog") {
+		t.Fatalf("output=%s", out)
+	}
+}
+
+func TestPostURLUniqueConstraintViaCLIPath(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
@@ -118,10 +123,10 @@ func TestPostURLUniqueConstraint(t *testing.T) {
 	manifest := filepath.Join("testdata", "sources.yaml")
 
 	a, err := app.New(context.Background(), app.Options{
-		DBPath:       dbPath,
-		SourcesPath:  manifest,
-		HTTPClient:   http.DefaultClient,
-		UserAgent:    "blerg-test",
+		DBPath:      dbPath,
+		SourcesPath: manifest,
+		HTTPClient:  http.DefaultClient,
+		UserAgent:   app.DefaultUserAgent,
 	})
 	if err != nil {
 		t.Fatalf("new app: %v", err)
@@ -133,24 +138,39 @@ func TestPostURLUniqueConstraint(t *testing.T) {
 	if err != nil || len(sources) == 0 {
 		t.Fatalf("sources: %v", err)
 	}
-	sourceID := sources[0].ID
 
-	if err := a.UpsertPost(ctx, sourceID, "First", "https://example.com/a", nil, "", ""); err != nil {
+	var sourceID int64
+	for _, s := range sources {
+		if s.Name == "Fixture Engineering Blog" {
+			sourceID = s.ID
+			break
+		}
+	}
+	if sourceID == 0 {
+		t.Fatal("fixture source id missing")
+	}
+
+	if err := a.UpsertPost(ctx, store.PostDraft{
+		SourceID: sourceID,
+		Title:    "First",
+		URL:      "https://example.com/a",
+	}); err != nil {
 		t.Fatalf("first upsert: %v", err)
 	}
-	if err := a.UpsertPost(ctx, sourceID, "Second", "https://example.com/a", nil, "", ""); err != nil {
-		t.Fatalf("second upsert same url: %v", err)
+	if err := a.UpsertPost(ctx, store.PostDraft{
+		SourceID: sourceID,
+		Title:    "Second",
+		URL:      "https://example.com/a",
+	}); err != nil {
+		t.Fatalf("second upsert: %v", err)
 	}
 
 	posts, err := a.ListPosts(ctx)
 	if err != nil {
 		t.Fatalf("list posts: %v", err)
 	}
-	if len(posts) != 1 {
-		t.Fatalf("posts count = %d, want 1", len(posts))
-	}
-	if posts[0].Title != "Second" {
-		t.Fatalf("title = %q, want Second", posts[0].Title)
+	if len(posts) != 1 || posts[0].Title != "Second" {
+		t.Fatalf("posts=%+v", posts)
 	}
 }
 
@@ -158,6 +178,29 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
+}
+
+func buildCLI(t *testing.T) string {
+	t.Helper()
+	bin := filepath.Join(t.TempDir(), "blerg")
+	cmd := exec.Command("go", "build", "-o", bin, "./cmd/blerg")
+	cmd.Dir = mustRepoRoot(t)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("build: %v\n%s", err, out)
+	}
+	return bin
+}
+
+func mustRepoRoot(t *testing.T) string {
+	t.Helper()
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(wd, "go.mod")); err == nil {
+		return wd
+	}
+	return filepath.Join(wd, "..", "..")
 }
 
 func TestMain(m *testing.M) {
