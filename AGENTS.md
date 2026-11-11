@@ -42,6 +42,10 @@ Add build, test, and lint commands here after you choose a stack.
 
 Work is tracked in GitHub Issues on `iandesj/boilerplate` via the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
+### Triage labels
+
+Five canonical roles (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`) match GitHub label names. See `docs/agents/triage-labels.md`.
+
 ### Domain docs
 
 Single-context layout: root `GLOSSARY.md` (when present) and `docs/adr/`. See `docs/agents/domain.md`.
