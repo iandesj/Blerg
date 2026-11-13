@@ -1,0 +1,7 @@
+sources:
+  - name: Alpha Engineering
+    feed_url: https://example.com/alpha/feed.xml
+    enabled: true
+  - name: Beta Engineering
+    feed_url: https://example.com/beta/feed.xml
+    enabled: true

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `blerg sources list` shows per-source last successful ingest time and last error (when present).
 - Shipped `config/sources.yaml` with validated engineering-blog feeds including AWS Architecture, Discord, and Pinterest (Uber and LinkedIn disabled after URL check).
 
 ### Changed

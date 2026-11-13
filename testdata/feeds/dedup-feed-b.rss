@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<rss version="2.0">
+  <channel>
+    <title>Beta</title>
+    <item>
+      <title>Shared Post Renamed</title>
+      <link>https://example.com/posts/shared</link>
+    </item>
+  </channel>
+</rss>

@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/iandesj/blerg/internal/app"
 	"github.com/iandesj/blerg/internal/rank"
@@ -116,6 +117,22 @@ func newFindCommand(s *Settings) *cobra.Command {
 	}
 }
 
+func formatSourceTimestamp(t *time.Time) string {
+	if t == nil {
+		return "-"
+	}
+	return t.UTC().Format(time.RFC3339)
+}
+
+func sanitizeTabField(s string) string {
+	if s == "" {
+		return "-"
+	}
+	s = strings.ReplaceAll(s, "\t", " ")
+	s = strings.ReplaceAll(s, "\n", " ")
+	return s
+}
+
 func formatFindHuman(p rank.MatchResult) string {
 	var b strings.Builder
 	_, _ = fmt.Fprintf(&b, "Title: %s\n", p.Title)
@@ -152,9 +169,15 @@ func newSourcesCommand(s *Settings) *cobra.Command {
 				return err
 			}
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
-			_, _ = fmt.Fprintln(w, "NAME\tENABLED\tFEED_URL")
+			_, _ = fmt.Fprintln(w, "NAME\tENABLED\tLAST_SUCCESS\tLAST_ERROR\tFEED_URL")
 			for _, src := range sources {
-				_, _ = fmt.Fprintf(w, "%s\t%v\t%s\n", src.Name, src.Enabled, src.FeedURL)
+				_, _ = fmt.Fprintf(w, "%s\t%v\t%s\t%s\t%s\n",
+					src.Name,
+					src.Enabled,
+					formatSourceTimestamp(src.LastSuccessAt),
+					sanitizeTabField(src.LastError),
+					src.FeedURL,
+				)
 			}
 			return w.Flush()
 		},
