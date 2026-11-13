@@ -4,9 +4,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 const DefaultUserAgent = "Blerg (https://github.com/iandesj/Blerg)"
+
+const (
+	DefaultStaleness     = 24 * time.Hour
+	DefaultMaxConcurrent = 4
+)
 
 func DefaultDBPath() (string, error) {
 	dir, err := os.UserConfigDir()

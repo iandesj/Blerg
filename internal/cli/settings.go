@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -17,10 +18,12 @@ import (
 )
 
 type Settings struct {
-	DBPath      string
-	SourcesPath string
-	HTTPClient  app.HTTPClient
-	UserAgent   string
+	DBPath        string
+	SourcesPath   string
+	HTTPClient    app.HTTPClient
+	UserAgent     string
+	Staleness     time.Duration
+	MaxConcurrent int
 }
 
 func defaultSettings() (Settings, error) {
@@ -29,19 +32,23 @@ func defaultSettings() (Settings, error) {
 		return Settings{}, err
 	}
 	return Settings{
-		DBPath:      dbPath,
-		SourcesPath: "config/sources.yaml",
-		HTTPClient:  http.DefaultClient,
-		UserAgent:   app.DefaultUserAgent,
+		DBPath:        dbPath,
+		SourcesPath:   "config/sources.yaml",
+		HTTPClient:    http.DefaultClient,
+		UserAgent:     app.DefaultUserAgent,
+		Staleness:     app.DefaultStaleness,
+		MaxConcurrent: app.DefaultMaxConcurrent,
 	}, nil
 }
 
 func (s *Settings) openApp(ctx context.Context) (*app.App, error) {
 	return app.New(ctx, app.Options{
-		DBPath:      s.DBPath,
-		SourcesPath: s.SourcesPath,
-		HTTPClient:  s.HTTPClient,
-		UserAgent:   s.UserAgent,
+		DBPath:        s.DBPath,
+		SourcesPath:   s.SourcesPath,
+		HTTPClient:    s.HTTPClient,
+		UserAgent:     s.UserAgent,
+		Staleness:     s.Staleness,
+		MaxConcurrent: s.MaxConcurrent,
 	})
 }
 
@@ -60,6 +67,8 @@ func NewRootCommand(s Settings) *cobra.Command {
 	}
 	root.PersistentFlags().StringVar(&settings.DBPath, "db", settings.DBPath, "SQLite index path")
 	root.PersistentFlags().StringVar(&settings.SourcesPath, "sources", settings.SourcesPath, "Sources manifest path")
+	root.PersistentFlags().DurationVar(&settings.Staleness, "stale-after", settings.Staleness, "Refresh automatically during find when the index is older than this duration")
+	root.PersistentFlags().IntVar(&settings.MaxConcurrent, "max-concurrent", settings.MaxConcurrent, "Maximum concurrent feed fetches during refresh")
 
 	root.AddCommand(newRefreshCommand(&settings))
 	root.AddCommand(newFindCommand(&settings))
@@ -93,7 +102,8 @@ func newRefreshCommand(s *Settings) *cobra.Command {
 }
 
 func newFindCommand(s *Settings) *cobra.Command {
-	return &cobra.Command{
+	var jsonOutput bool
+	cmd := &cobra.Command{
 		Use:   "find [query]",
 		Short: "Return the single best-matching indexed post for a query",
 		Args:  cobra.MinimumNArgs(1),
@@ -111,10 +121,17 @@ func newFindCommand(s *Settings) *cobra.Command {
 				}
 				return err
 			}
+			if jsonOutput {
+				enc := json.NewEncoder(cmd.OutOrStdout())
+				enc.SetEscapeHTML(false)
+				return enc.Encode(a.FindJSON(match))
+			}
 			_, _ = fmt.Fprint(cmd.OutOrStdout(), formatFindHuman(match))
 			return nil
 		},
 	}
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Emit find result as JSON")
+	return cmd
 }
 
 func formatSourceTimestamp(t *time.Time) string {

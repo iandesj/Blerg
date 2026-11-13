@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 
 	"github.com/iandesj/blerg/internal/feed"
 	"github.com/iandesj/blerg/internal/store"
+	"golang.org/x/sync/errgroup"
 )
 
 type RefreshStats struct {
@@ -23,29 +25,50 @@ func (a *App) Refresh(ctx context.Context) (RefreshStats, error) {
 		return RefreshStats{}, err
 	}
 
-	var stats RefreshStats
+	var enabled []Source
 	for _, src := range sources {
-		if !src.Enabled {
-			continue
+		if src.Enabled {
+			enabled = append(enabled, src)
 		}
-		stats.SourcesEnabled++
-		indexed, err := a.refreshSource(ctx, src)
-		if err != nil {
-			stats.SourcesFailed++
-			if setErr := a.db.SetSourceLastError(ctx, src.ID, err.Error()); setErr != nil {
-			return stats, setErr
-		}
-			continue
-		}
-		stats.PostsIndexed += indexed
-		if err := a.db.SetSourceRefreshSuccess(ctx, src.ID); err != nil {
-			return stats, err
-		}
+	}
+	if len(enabled) == 0 {
+		return RefreshStats{}, fmt.Errorf("refresh: no enabled sources in manifest")
 	}
 
-	if stats.SourcesEnabled == 0 {
-		return stats, fmt.Errorf("refresh: no enabled sources in manifest")
+	var stats RefreshStats
+	stats.SourcesEnabled = len(enabled)
+
+	var mu sync.Mutex
+	g, gctx := errgroup.WithContext(ctx)
+	sem := make(chan struct{}, a.maxConcurrent)
+
+	for _, source := range enabled {
+		src := source
+		g.Go(func() error {
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			indexed, err := a.refreshSource(gctx, src)
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				stats.SourcesFailed++
+				if setErr := a.db.SetSourceLastError(gctx, src.ID, err.Error()); setErr != nil {
+					return setErr
+				}
+				return nil
+			}
+			stats.PostsIndexed += indexed
+			if err := a.db.SetSourceRefreshSuccess(gctx, src.ID); err != nil {
+				return err
+			}
+			return nil
+		})
 	}
+	if err := g.Wait(); err != nil {
+		return stats, err
+	}
+
 	if stats.SourcesFailed == stats.SourcesEnabled {
 		return stats, fmt.Errorf("refresh: all %d enabled source(s) failed", stats.SourcesEnabled)
 	}
@@ -53,12 +76,20 @@ func (a *App) Refresh(ctx context.Context) (RefreshStats, error) {
 }
 
 func (a *App) refreshSource(ctx context.Context, src Source) (int, error) {
-	resp, err := a.FetchFeed(ctx, src.FeedURL)
+	resp, err := a.fetchFeed(ctx, src)
 	if err != nil {
 		return 0, fmt.Errorf("fetch %s: %w", src.Name, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode != http.StatusOK {
+
+	switch resp.StatusCode {
+	case http.StatusNotModified:
+		return 0, nil
+	case http.StatusOK:
+		if err := a.db.SetSourceHTTPValidators(ctx, src.ID, resp.Header.Get("ETag"), resp.Header.Get("Last-Modified")); err != nil {
+			return 0, err
+		}
+	default:
 		return 0, fmt.Errorf("fetch %s: HTTP %s", src.Name, resp.Status)
 	}
 

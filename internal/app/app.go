@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/iandesj/blerg/internal/config"
 	"github.com/iandesj/blerg/internal/store"
@@ -16,20 +17,26 @@ type HTTPClient interface {
 }
 
 type Options struct {
-	DBPath      string
-	SourcesPath string
-	HTTPClient  HTTPClient
-	UserAgent   string
+	DBPath        string
+	SourcesPath   string
+	HTTPClient    HTTPClient
+	UserAgent     string
+	Staleness     time.Duration
+	MaxConcurrent int
+	Now           func() time.Time
 }
 
 type Source = store.Source
 type Post = store.Post
 
 type App struct {
-	db          *store.DB
-	sourcesPath string
-	httpClient  HTTPClient
-	userAgent   string
+	db            *store.DB
+	sourcesPath   string
+	httpClient    HTTPClient
+	userAgent     string
+	staleness     time.Duration
+	maxConcurrent int
+	now           func() time.Time
 }
 
 func New(ctx context.Context, opts Options) (*App, error) {
@@ -45,6 +52,15 @@ func New(ctx context.Context, opts Options) (*App, error) {
 	if opts.UserAgent == "" {
 		opts.UserAgent = DefaultUserAgent
 	}
+	if opts.Staleness <= 0 {
+		opts.Staleness = DefaultStaleness
+	}
+	if opts.MaxConcurrent <= 0 {
+		opts.MaxConcurrent = DefaultMaxConcurrent
+	}
+	if opts.Now == nil {
+		opts.Now = time.Now
+	}
 	if err := os.MkdirAll(filepath.Dir(opts.DBPath), 0o755); err != nil {
 		return nil, err
 	}
@@ -55,10 +71,13 @@ func New(ctx context.Context, opts Options) (*App, error) {
 	}
 
 	a := &App{
-		db:          db,
-		sourcesPath: opts.SourcesPath,
-		httpClient:  opts.HTTPClient,
-		userAgent:   opts.UserAgent,
+		db:            db,
+		sourcesPath:   opts.SourcesPath,
+		httpClient:    opts.HTTPClient,
+		userAgent:     opts.UserAgent,
+		staleness:     opts.Staleness,
+		maxConcurrent: opts.MaxConcurrent,
+		now:           opts.Now,
 	}
 	if err := a.syncSources(ctx); err != nil {
 		_ = db.Close()
@@ -102,9 +121,5 @@ func (a *App) HTTPGet(ctx context.Context, rawURL string) (*http.Response, error
 		return nil, err
 	}
 	req.Header.Set("User-Agent", a.userAgent)
-	return a.httpClient.Do(req)
-}
-
-func (a *App) FetchFeed(ctx context.Context, feedURL string) (*http.Response, error) {
-	return a.HTTPGet(ctx, feedURL)
+	return a.doWithBackoff(ctx, req)
 }

@@ -66,6 +66,8 @@ type Source struct {
 	Name          string
 	FeedURL       string
 	Enabled       bool
+	ETag          string
+	LastModified  string
 	LastSuccessAt *time.Time
 	LastError     string
 }
@@ -92,7 +94,9 @@ func (db *DB) UpsertSource(ctx context.Context, name, feedURL string, enabled bo
 
 func (db *DB) ListSources(ctx context.Context) ([]Source, error) {
 	rows, err := db.sql.QueryContext(ctx, `
-		SELECT id, name, feed_url, enabled, last_success_at, COALESCE(last_error, '')
+		SELECT id, name, feed_url, enabled,
+		       COALESCE(etag, ''), COALESCE(last_modified, ''),
+		       last_success_at, COALESCE(last_error, '')
 		FROM sources ORDER BY name
 	`)
 	if err != nil {
@@ -105,7 +109,8 @@ func (db *DB) ListSources(ctx context.Context) ([]Source, error) {
 		var row Source
 		var en int
 		var lastSuccess sql.NullString
-		if err := rows.Scan(&row.ID, &row.Name, &row.FeedURL, &en, &lastSuccess, &row.LastError); err != nil {
+		if err := rows.Scan(&row.ID, &row.Name, &row.FeedURL, &en,
+			&row.ETag, &row.LastModified, &lastSuccess, &row.LastError); err != nil {
 			return nil, err
 		}
 		row.Enabled = en == 1
@@ -162,6 +167,41 @@ func (db *DB) SetSourceRefreshSuccess(ctx context.Context, sourceID int64) error
 		UPDATE sources SET last_success_at = ?, last_error = '' WHERE id = ?
 	`, now, sourceID)
 	return err
+}
+
+func (db *DB) SetSourceHTTPValidators(ctx context.Context, sourceID int64, etag, lastModified string) error {
+	_, err := db.sql.ExecContext(ctx, `
+		UPDATE sources SET
+			etag = CASE WHEN ? != '' THEN ? ELSE etag END,
+			last_modified = CASE WHEN ? != '' THEN ? ELSE last_modified END
+		WHERE id = ?
+	`, etag, etag, lastModified, lastModified, sourceID)
+	return err
+}
+
+func (db *DB) SetSourceLastSuccessAt(ctx context.Context, sourceID int64, at time.Time) error {
+	_, err := db.sql.ExecContext(ctx, `
+		UPDATE sources SET last_success_at = ? WHERE id = ?
+	`, at.UTC().Format(time.RFC3339), sourceID)
+	return err
+}
+
+func (db *DB) LatestRefreshAt(ctx context.Context) (*time.Time, error) {
+	var raw sql.NullString
+	err := db.sql.QueryRowContext(ctx, `
+		SELECT MAX(last_success_at) FROM sources WHERE enabled = 1
+	`).Scan(&raw)
+	if err != nil {
+		return nil, err
+	}
+	if !raw.Valid || raw.String == "" {
+		return nil, nil
+	}
+	t, err := time.Parse(time.RFC3339, raw.String)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
 }
 
 func (db *DB) SetSourceLastError(ctx context.Context, sourceID int64, message string) error {
