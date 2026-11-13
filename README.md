@@ -114,4 +114,4 @@ See [architecture](docs/architecture.md) and [ADR 0001](docs/adr/0001-rss-first-
 
 ## License
 
-Specify your license here (e.g. MIT, Apache-2.0, proprietary).
+[MIT](LICENSE)
