@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Shipped `config/sources.yaml` with ~24 validated engineering-blog feeds (Uber and LinkedIn feeds disabled after URL check).
+- Shipped `config/sources.yaml` with validated engineering-blog feeds including AWS Architecture, Discord, and Pinterest (Uber and LinkedIn disabled after URL check).
 
 ### Changed
 

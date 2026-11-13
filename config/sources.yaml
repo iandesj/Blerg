@@ -37,6 +37,18 @@ sources:
     feed_url: https://medium.com/airbnb-engineering/feed
     enabled: true
 
+  - name: AWS Architecture Blog
+    feed_url: https://aws.amazon.com/blogs/architecture/feed/
+    enabled: true
+
+  - name: Discord Blog
+    feed_url: https://discord.com/blog/rss.xml
+    enabled: true
+
+  - name: Pinterest Engineering
+    feed_url: https://medium.com/@Pinterest_Engineering/feed
+    enabled: true
+
   - name: Stripe Blog
     feed_url: https://stripe.com/blog/feed.rss
     enabled: true
