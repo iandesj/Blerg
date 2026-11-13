@@ -20,16 +20,13 @@ func TestCLIRefreshIndexesPostsFromFixtureFeed(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "blerg.db")
 	manifest := filepath.Join("testdata", "sources.yaml")
-	fixtureBody := readTestdata(t, "testdata/feeds/engineering-posts.rss")
-
-	transport := fixtureFeedTransport(t, "https://example.com/engineering/feed.xml", fixtureBody)
 	var out bytes.Buffer
 	var errOut bytes.Buffer
 
 	code := cli.RunWithSettings(cli.Settings{
 		DBPath:      dbPath,
 		SourcesPath: manifest,
-		HTTPClient:  &http.Client{Transport: transport},
+		HTTPClient:  http.DefaultClient,
 		UserAgent:   app.DefaultUserAgent,
 	}, []string{"--db", dbPath, "--sources", manifest, "refresh"}, &out, &errOut)
 	if code != 0 {
@@ -42,7 +39,7 @@ func TestCLIRefreshIndexesPostsFromFixtureFeed(t *testing.T) {
 	a, err := app.New(context.Background(), app.Options{
 		DBPath:      dbPath,
 		SourcesPath: manifest,
-		HTTPClient:  &http.Client{Transport: transport},
+		HTTPClient:  http.DefaultClient,
 		UserAgent:   app.DefaultUserAgent,
 	})
 	if err != nil {
@@ -106,14 +103,11 @@ func TestCLIRefreshIdempotentByURL(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "blerg.db")
 	manifest := filepath.Join("testdata", "sources.yaml")
-	fixtureBody := readTestdata(t, "testdata/feeds/engineering-posts.rss")
-	transport := fixtureFeedTransport(t, "https://example.com/engineering/feed.xml", fixtureBody)
-
 	run := func() {
 		code := cli.RunWithSettings(cli.Settings{
 			DBPath:      dbPath,
 			SourcesPath: manifest,
-			HTTPClient:  &http.Client{Transport: transport},
+			HTTPClient:  http.DefaultClient,
 			UserAgent:   app.DefaultUserAgent,
 		}, []string{"--db", dbPath, "--sources", manifest, "refresh"}, io.Discard, io.Discard)
 		if code != 0 {
@@ -126,7 +120,7 @@ func TestCLIRefreshIdempotentByURL(t *testing.T) {
 	a, err := app.New(context.Background(), app.Options{
 		DBPath:      dbPath,
 		SourcesPath: manifest,
-		HTTPClient:  &http.Client{Transport: transport},
+		HTTPClient:  http.DefaultClient,
 		UserAgent:   app.DefaultUserAgent,
 	})
 	if err != nil {
@@ -148,7 +142,7 @@ func TestCLIRefreshNonZeroWhenFeedFails(t *testing.T) {
 
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "blerg.db")
-	manifest := filepath.Join("testdata", "sources.yaml")
+	manifest := filepath.Join("testdata", "sources-http.yaml")
 
 	transport := roundTripFunc(func(req *http.Request) (*http.Response, error) {
 		return &http.Response{
@@ -175,14 +169,12 @@ func TestCLIRefreshInvalidXMLFailsSource(t *testing.T) {
 
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "blerg.db")
-	manifest := filepath.Join("testdata", "sources.yaml")
-
-	transport := fixtureFeedTransport(t, "https://example.com/engineering/feed.xml", "<broken")
+	manifest := filepath.Join("testdata", "sources-broken.yaml")
 
 	code := cli.RunWithSettings(cli.Settings{
 		DBPath:      dbPath,
 		SourcesPath: manifest,
-		HTTPClient:  &http.Client{Transport: transport},
+		HTTPClient:  http.DefaultClient,
 		UserAgent:   app.DefaultUserAgent,
 	}, []string{"--db", dbPath, "--sources", manifest, "refresh"}, io.Discard, io.Discard)
 	if code == 0 {
@@ -192,7 +184,7 @@ func TestCLIRefreshInvalidXMLFailsSource(t *testing.T) {
 	a, err := app.New(context.Background(), app.Options{
 		DBPath:      dbPath,
 		SourcesPath: manifest,
-		HTTPClient:  &http.Client{Transport: transport},
+		HTTPClient:  http.DefaultClient,
 		UserAgent:   app.DefaultUserAgent,
 	})
 	if err != nil {

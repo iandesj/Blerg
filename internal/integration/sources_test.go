@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
-	"sync/atomic"
 	"testing"
 
 	"github.com/iandesj/blerg/internal/app"
@@ -20,39 +19,35 @@ func TestCLIRefreshSkipsDisabledSources(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "blerg.db")
 	manifest := filepath.Join("testdata", "sources.yaml")
-	fixtureBody := readTestdata(t, "testdata/feeds/smoke-item.rss")
-
-	var disabledFetches atomic.Int32
-	transport := roundTripFunc(func(req *http.Request) (*http.Response, error) {
-		switch req.URL.String() {
-		case "https://example.com/engineering/feed.xml":
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(strings.NewReader(fixtureBody)),
-				Header:     make(http.Header),
-				Request:    req,
-			}, nil
-		case "https://example.com/disabled/feed.xml":
-			disabledFetches.Add(1)
-			t.Fatal("disabled source should not be fetched")
-			return nil, nil
-		default:
-			t.Fatalf("unexpected URL %s", req.URL)
-			return nil, nil
-		}
-	})
 
 	code := cli.RunWithSettings(cli.Settings{
 		DBPath:      dbPath,
 		SourcesPath: manifest,
-		HTTPClient:  &http.Client{Transport: transport},
+		HTTPClient:  http.DefaultClient,
 		UserAgent:   app.DefaultUserAgent,
 	}, []string{"--db", dbPath, "--sources", manifest, "refresh"}, nil, nil)
 	if code != 0 {
 		t.Fatalf("refresh exit %d", code)
 	}
-	if disabledFetches.Load() != 0 {
-		t.Fatal("disabled feed was requested")
+
+	a, err := app.New(context.Background(), app.Options{
+		DBPath:      dbPath,
+		SourcesPath: manifest,
+		HTTPClient:  http.DefaultClient,
+		UserAgent:   app.DefaultUserAgent,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = a.Close() })
+	sources, err := a.ListSources(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, src := range sources {
+		if src.Name == "Disabled Blog" && src.LastSuccessAt != nil {
+			t.Fatal("disabled source should not have last_success_at")
+		}
 	}
 }
 

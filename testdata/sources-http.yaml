@@ -1,0 +1,8 @@
+# HTTP fixture URLs for integration tests that inject transport mocks.
+sources:
+  - name: Fixture Engineering Blog
+    feed_url: https://example.com/engineering/feed.xml
+    enabled: true
+  - name: Disabled Blog
+    feed_url: https://example.com/disabled/feed.xml
+    enabled: false

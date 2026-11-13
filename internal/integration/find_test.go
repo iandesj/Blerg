@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/iandesj/blerg/internal/app"
 	"github.com/iandesj/blerg/internal/cli"
@@ -18,14 +19,14 @@ func TestCLIFindReturnsExpectedPostAfterRefresh(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "blerg.db")
 	manifest := filepath.Join("testdata", "sources.yaml")
-	fixtureBody := readTestdata(t, "testdata/feeds/engineering-posts.rss")
-	transport := fixtureFeedTransport(t, "https://example.com/engineering/feed.xml", fixtureBody)
 
 	refreshCode := cli.RunWithSettings(cli.Settings{
-		DBPath:      dbPath,
-		SourcesPath: manifest,
-		HTTPClient:  &http.Client{Transport: transport},
-		UserAgent:   app.DefaultUserAgent,
+		DBPath:        dbPath,
+		SourcesPath:   manifest,
+		HTTPClient:    http.DefaultClient,
+		UserAgent:     app.DefaultUserAgent,
+		Staleness:     365 * 24 * time.Hour,
+		MaxConcurrent: 4,
 	}, []string{"--db", dbPath, "--sources", manifest, "refresh"}, nil, nil)
 	if refreshCode != 0 {
 		t.Fatalf("refresh exit %d", refreshCode)
@@ -34,10 +35,12 @@ func TestCLIFindReturnsExpectedPostAfterRefresh(t *testing.T) {
 	var out bytes.Buffer
 	var errOut bytes.Buffer
 	findCode := cli.RunWithSettings(cli.Settings{
-		DBPath:      dbPath,
-		SourcesPath: manifest,
-		HTTPClient:  &http.Client{Transport: transport},
-		UserAgent:   app.DefaultUserAgent,
+		DBPath:        dbPath,
+		SourcesPath:   manifest,
+		HTTPClient:    http.DefaultClient,
+		UserAgent:     app.DefaultUserAgent,
+		Staleness:     365 * 24 * time.Hour,
+		MaxConcurrent: 4,
 	}, []string{"--db", dbPath, "--sources", manifest, "find", "pooling postgres"}, &out, &errOut)
 	if findCode != 0 {
 		t.Fatalf("find exit %d stderr=%q", findCode, errOut.String())
@@ -63,13 +66,12 @@ func TestCLIFindNoStrongMatchExitCode(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "blerg.db")
 	manifest := filepath.Join("testdata", "sources.yaml")
-	fixtureBody := readTestdata(t, "testdata/feeds/engineering-posts.rss")
-	transport := fixtureFeedTransport(t, "https://example.com/engineering/feed.xml", fixtureBody)
-
 	refreshCode := cli.RunWithSettings(cli.Settings{
-		DBPath:      dbPath,
-		SourcesPath: manifest,
-		HTTPClient:  &http.Client{Transport: transport},
+		DBPath:        dbPath,
+		SourcesPath:   manifest,
+		HTTPClient:    http.DefaultClient,
+		Staleness:     365 * 24 * time.Hour,
+		MaxConcurrent: 4,
 		UserAgent:   app.DefaultUserAgent,
 	}, []string{"--db", dbPath, "--sources", manifest, "refresh"}, io.Discard, io.Discard)
 	if refreshCode != 0 {
@@ -78,10 +80,12 @@ func TestCLIFindNoStrongMatchExitCode(t *testing.T) {
 
 	var errOut bytes.Buffer
 	findCode := cli.RunWithSettings(cli.Settings{
-		DBPath:      dbPath,
-		SourcesPath: manifest,
-		HTTPClient:  &http.Client{Transport: transport},
-		UserAgent:   app.DefaultUserAgent,
+		DBPath:        dbPath,
+		SourcesPath:   manifest,
+		HTTPClient:    http.DefaultClient,
+		UserAgent:     app.DefaultUserAgent,
+		Staleness:     365 * 24 * time.Hour,
+		MaxConcurrent: 4,
 	}, []string{"--db", dbPath, "--sources", manifest, "find", "tears"}, io.Discard, &errOut)
 	if findCode != cli.ExitNoMatch {
 		t.Fatalf("find exit %d, want %d stderr=%q", findCode, cli.ExitNoMatch, errOut.String())

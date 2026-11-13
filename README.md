@@ -26,11 +26,9 @@ go install ./cmd/blerg   # installs as `blerg` if GOPATH/bin is on PATH
 ```bash
 go build -o bin/blerg ./cmd/blerg
 rm -f /tmp/blerg-test.db
-./bin/blerg --db /tmp/blerg-test.db --sources testdata/sources-local.yaml refresh
-./bin/blerg --db /tmp/blerg-test.db --sources testdata/sources-local.yaml find "pooling"
+./bin/blerg --db /tmp/blerg-test.db --sources testdata/sources.yaml refresh
+./bin/blerg --db /tmp/blerg-test.db --sources testdata/sources.yaml find "pooling"
 ```
-
-`testdata/sources.yaml` uses `https://example.com/...` URLs for integration tests with mocked HTTP only — the real CLI cannot use that manifest without a custom transport.
 
 **With live feeds:**
 

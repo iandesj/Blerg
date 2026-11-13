@@ -65,7 +65,7 @@ func TestCLIRefreshUsesInjectableHTTPAndCannedFeed(t *testing.T) {
 
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "blerg.db")
-	manifest := filepath.Join("testdata", "sources.yaml")
+	manifest := filepath.Join("testdata", "sources-http.yaml")
 
 	cannedRSS, err := os.ReadFile(filepath.Join("testdata", "feeds", "smoke-item.rss"))
 	if err != nil {
@@ -96,6 +96,9 @@ func TestCLIRefreshUsesInjectableHTTPAndCannedFeed(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "indexed 1 post(s)") {
 		t.Fatalf("stdout = %q", out.String())
+	}
+	if len(cannedRSS) == 0 {
+		t.Fatal("canned RSS missing")
 	}
 }
 

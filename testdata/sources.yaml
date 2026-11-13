@@ -1,7 +1,9 @@
+# Fixture manifest for local try and integration tests.
+# feed_url paths are relative to this file; use testdata/sources-http.yaml when tests need mocked HTTP.
 sources:
   - name: Fixture Engineering Blog
-    feed_url: https://example.com/engineering/feed.xml
+    feed_url: feeds/engineering-posts.rss
     enabled: true
   - name: Disabled Blog
-    feed_url: https://example.com/disabled/feed.xml
+    feed_url: feeds/smoke-item.rss
     enabled: false

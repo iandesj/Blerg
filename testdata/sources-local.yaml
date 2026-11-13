@@ -1,8 +1,0 @@
-# Offline dev manifest: feed_url paths are relative to this file's directory.
-sources:
-  - name: Fixture Engineering Blog
-    feed_url: feeds/engineering-posts.rss
-    enabled: true
-  - name: Disabled Blog
-    feed_url: feeds/smoke-item.rss
-    enabled: false

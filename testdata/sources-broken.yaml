@@ -1,0 +1,4 @@
+sources:
+  - name: Fixture Engineering Blog
+    feed_url: feeds/broken.rss
+    enabled: true

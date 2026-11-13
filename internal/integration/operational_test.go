@@ -21,7 +21,7 @@ func TestCLIRefreshSendsConditionalRequestOnSecondRefresh(t *testing.T) {
 
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "blerg.db")
-	manifest := filepath.Join("testdata", "sources.yaml")
+	manifest := filepath.Join("testdata", "sources-http.yaml")
 	fixtureBody := readTestdata(t, "testdata/feeds/smoke-item.rss")
 
 	var fetchCount atomic.Int32
@@ -72,12 +72,10 @@ func TestCLIFindJSONOutput(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "blerg.db")
 	manifest := filepath.Join("testdata", "sources.yaml")
-	fixtureBody := readTestdata(t, "testdata/feeds/engineering-posts.rss")
-	transport := fixtureFeedTransport(t, "https://example.com/engineering/feed.xml", fixtureBody)
 	settings := cli.Settings{
 		DBPath:        dbPath,
 		SourcesPath:   manifest,
-		HTTPClient:    &http.Client{Transport: transport},
+		HTTPClient:    http.DefaultClient,
 		UserAgent:     app.DefaultUserAgent,
 		Staleness:     365 * 24 * time.Hour,
 		MaxConcurrent: 4,
@@ -116,25 +114,11 @@ func TestCLIFindRefreshesWhenIndexStale(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "blerg.db")
 	manifest := filepath.Join("testdata", "sources.yaml")
-	fixtureBody := readTestdata(t, "testdata/feeds/smoke-item.rss")
-
-	var feedFetches atomic.Int32
-	transport := roundTripFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.String() == "https://example.com/engineering/feed.xml" {
-			feedFetches.Add(1)
-		}
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(strings.NewReader(fixtureBody)),
-			Header:     make(http.Header),
-			Request:    req,
-		}, nil
-	})
 
 	settings := cli.Settings{
 		DBPath:        dbPath,
 		SourcesPath:   manifest,
-		HTTPClient:    &http.Client{Transport: transport},
+		HTTPClient:    http.DefaultClient,
 		UserAgent:     app.DefaultUserAgent,
 		Staleness:     time.Hour,
 		MaxConcurrent: 2,
@@ -142,10 +126,6 @@ func TestCLIFindRefreshesWhenIndexStale(t *testing.T) {
 	if code := cli.RunWithSettings(settings, []string{"--db", dbPath, "--sources", manifest, "refresh"}, nil, nil); code != 0 {
 		t.Fatalf("refresh exit %d", code)
 	}
-	if feedFetches.Load() != 1 {
-		t.Fatalf("after refresh fetches = %d", feedFetches.Load())
-	}
-
 	db, err := store.Open(dbPath)
 	if err != nil {
 		t.Fatal(err)
@@ -164,15 +144,35 @@ func TestCLIFindRefreshesWhenIndexStale(t *testing.T) {
 			}
 		}
 	}
+	srcs, err = db.ListSources(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var lastBefore time.Time
+	for _, src := range srcs {
+		if src.Name == "Fixture Engineering Blog" && src.LastSuccessAt != nil {
+			lastBefore = *src.LastSuccessAt
+		}
+	}
 
 	var out bytes.Buffer
-	if code := cli.RunWithSettings(settings, []string{"--db", dbPath, "--sources", manifest, "find", "smoke"}, &out, nil); code != 0 {
+	if code := cli.RunWithSettings(settings, []string{"--db", dbPath, "--sources", manifest, "find", "pooling"}, &out, nil); code != 0 {
 		t.Fatalf("find exit %d", code)
 	}
-	if feedFetches.Load() != 2 {
-		t.Fatalf("fetches after stale find = %d, want 2", feedFetches.Load())
-	}
-	if !strings.Contains(out.String(), "Smoke") {
+	if !strings.Contains(out.String(), "Connection Pooling") {
 		t.Fatalf("stdout=%q", out.String())
+	}
+
+	srcsAfter, err := db.ListSources(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, src := range srcsAfter {
+		if src.Name != "Fixture Engineering Blog" || src.LastSuccessAt == nil {
+			continue
+		}
+		if !src.LastSuccessAt.After(lastBefore) {
+			t.Fatal("expected stale find to trigger refresh (last_success_at not updated)")
+		}
 	}
 }
