@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Shipped `config/sources.yaml` with ~24 validated engineering-blog feeds (Uber and LinkedIn feeds disabled after URL check).
+
 ### Changed
 
 - `blerg refresh` exits 0 when at least one enabled source succeeds; non-zero only when every enabled source fails (partial failures on stderr).

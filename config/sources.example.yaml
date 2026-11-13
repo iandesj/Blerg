@@ -1,3 +1,4 @@
+# Minimal example for a custom manifest. The shipped allowlist is config/sources.yaml.
 sources:
   - name: Example Engineering Blog
     feed_url: https://example.com/feed.xml

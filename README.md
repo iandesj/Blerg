@@ -12,10 +12,12 @@ CLI that indexes engineering-blog feeds and finds **one** relevant post for your
 ```bash
 go build -o bin/blerg ./cmd/blerg
 ./bin/blerg --help
-./bin/blerg --sources config/sources.example.yaml sources list
+./bin/blerg sources list
+./bin/blerg refresh
+./bin/blerg find "connection pooling"
 ```
 
-Copy `config/sources.example.yaml` to configure feed sources. Use `--db` and `--sources` to point at a custom index and manifest.
+The default manifest is `config/sources.yaml` (curated company and independent engineering blogs). Override with `--sources`; see `config/sources.example.yaml` for a minimal template.
 
 ## Repository layout
 

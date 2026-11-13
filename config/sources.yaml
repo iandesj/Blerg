@@ -1,0 +1,108 @@
+# Curated engineering-blog RSS/Atom feeds for local indexing.
+# Disabled entries stayed in the manifest after feed URL checks failed (see comment per source).
+sources:
+  - name: Netflix Tech Blog
+    feed_url: https://netflixtechblog.com/feed
+    enabled: true
+
+  - name: Dropbox Tech
+    feed_url: https://dropbox.tech/feed
+    enabled: true
+
+  - name: Meta Engineering
+    feed_url: https://engineering.fb.com/feed/
+    enabled: true
+
+  - name: Cloudflare Blog
+    feed_url: https://blog.cloudflare.com/rss/
+    enabled: true
+
+  - name: Google Developers Blog
+    feed_url: https://developers.googleblog.com/feeds/posts/default
+    enabled: true
+
+  - name: Spotify Engineering
+    feed_url: https://engineering.atspotify.com/feed/
+    enabled: true
+
+  - name: Slack Engineering
+    feed_url: https://slack.engineering/feed/
+    enabled: true
+
+  - name: GitHub Blog
+    feed_url: https://github.blog/feed/
+    enabled: true
+
+  - name: Airbnb Engineering
+    feed_url: https://medium.com/airbnb-engineering/feed
+    enabled: true
+
+  - name: Stripe Blog
+    feed_url: https://stripe.com/blog/feed.rss
+    enabled: true
+
+  - name: Tailscale Blog
+    feed_url: https://tailscale.com/blog/index.xml
+    enabled: true
+
+  - name: Fly.io Blog
+    feed_url: https://fly.io/blog/feed.xml
+    enabled: true
+
+  - name: Vercel Blog
+    feed_url: https://vercel.com/blog/feed
+    enabled: true
+
+  - name: Shopify Engineering
+    feed_url: https://shopify.engineering/blog.atom
+    enabled: true
+
+  - name: Lyft Engineering
+    feed_url: https://eng.lyft.com/feed
+    enabled: true
+
+  - name: Square Engineering
+    feed_url: https://medium.com/square-corner-blog/feed
+    enabled: true
+
+  - name: Grafana Labs Blog
+    feed_url: https://grafana.com/blog/index.xml
+    enabled: true
+
+  - name: Datadog Engineering Blog
+    feed_url: https://www.datadoghq.com/blog/index.xml
+    enabled: true
+
+  - name: Elastic Blog
+    feed_url: https://www.elastic.co/blog/feed
+    enabled: true
+
+  - name: Kubernetes Blog
+    feed_url: https://kubernetes.io/feed.xml
+    enabled: true
+
+  - name: Stack Overflow Blog
+    feed_url: https://stackoverflow.blog/feed/
+    enabled: true
+
+  - name: Increment
+    feed_url: https://increment.com/feed.xml
+    enabled: true
+
+  - name: Martin Fowler
+    feed_url: https://martinfowler.com/feed.atom
+    enabled: true
+
+  - name: Dan Luu
+    feed_url: https://danluu.com/atom.xml
+    enabled: true
+
+  # Disabled: public feed URL returned HTTP 404 when checked (2026-03).
+  - name: Uber Engineering
+    feed_url: https://eng.uber.com/feed/
+    enabled: false
+
+  # Disabled: public feed URL returned HTTP 404 when checked (2026-03).
+  - name: LinkedIn Engineering
+    feed_url: https://engineering.linkedin.com/blog.rss.html
+    enabled: false
