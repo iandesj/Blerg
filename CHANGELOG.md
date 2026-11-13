@@ -49,11 +49,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Gitleaks secret scanning via pre-commit.
 - Development rules in `AGENTS.md` (commits, TDD, code quality, comments).
 
+## [0.2.0] - 2026-11-13
+
+### Added
+
+- `blerg update` replaces the running binary with the latest GitHub release.
+
 ## [0.1.0] - YYYY-MM-DD
 
 ### Added
 
 - First tagged release after you add application code.
 
-[Unreleased]: https://github.com/ORG/REPO/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/ORG/REPO/releases/tag/v0.1.0
+[Unreleased]: https://github.com/iandesj/Blerg/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/iandesj/Blerg/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/iandesj/Blerg/releases/tag/v0.1.0

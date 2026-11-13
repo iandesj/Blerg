@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -74,7 +75,30 @@ func NewRootCommand(s Settings) *cobra.Command {
 	root.AddCommand(newRefreshCommand(&settings))
 	root.AddCommand(newFindCommand(&settings))
 	root.AddCommand(newSourcesCommand(&settings))
+	root.AddCommand(newUpdateCommand())
 	return root
+}
+
+func newUpdateCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "update",
+		Short: "Replace this blerg binary with the latest GitHub release",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			exe, err := os.Executable()
+			if err != nil {
+				return err
+			}
+			if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+				exe = resolved
+			}
+			return updateBinary(cmd.Context(), http.DefaultClient, updateSpec{
+				APIBase: "https://api.github.com",
+				Current: Version,
+				Dest:    exe,
+			}, cmd.OutOrStdout())
+		},
+	}
 }
 
 func newRefreshCommand(s *Settings) *cobra.Command {

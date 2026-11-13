@@ -24,6 +24,8 @@ Windows: download `blerg_windows_amd64.zip` from that same release page.
 
 A `vX.Y.Z` tag is what publishes a release. Until one exists, the install command has nothing to download.
 
+`blerg update` replaces the binary you are running with the latest release. It does nothing when that binary is already the latest version.
+
 ## Quick start
 
 **Offline (repo fixtures, no network):**
@@ -48,6 +50,10 @@ blerg find --json "raft consensus"    # scripting output
 Default feed allowlist: `config/sources.yaml` (~28 engineering blogs). Override with `--sources` or copy `config/sources.example.yaml` for a minimal custom manifest.
 
 ## Commands
+
+### `blerg update`
+
+Downloads the latest GitHub release for this OS and architecture and replaces the current executable. Prints `up to date` when the running version already matches that release.
 
 ### `blerg refresh`
 
