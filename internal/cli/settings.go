@@ -103,9 +103,10 @@ func newRefreshCommand(s *Settings) *cobra.Command {
 
 func newFindCommand(s *Settings) *cobra.Command {
 	var jsonOutput bool
+	var random bool
 	cmd := &cobra.Command{
 		Use:   "find [query]",
-		Short: "Return the single best-matching indexed post for a query",
+		Short: "Return one indexed post for a query",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			a, err := s.openApp(cmd.Context())
@@ -114,7 +115,13 @@ func newFindCommand(s *Settings) *cobra.Command {
 			}
 			defer func() { _ = a.Close() }()
 
-			match, err := a.Find(cmd.Context(), strings.Join(args, " "))
+			query := strings.Join(args, " ")
+			var match rank.MatchResult
+			if random {
+				match, err = a.FindRandom(cmd.Context(), query)
+			} else {
+				match, err = a.Find(cmd.Context(), query)
+			}
 			if err != nil {
 				if errors.Is(err, app.ErrNoStrongMatch) {
 					return withExitCode(ExitNoMatch, err)
@@ -131,6 +138,7 @@ func newFindCommand(s *Settings) *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Emit find result as JSON")
+	cmd.Flags().BoolVar(&random, "random", false, "Return a random post that meets the match threshold")
 	return cmd
 }
 

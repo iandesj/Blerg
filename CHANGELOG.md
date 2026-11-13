@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `blerg find --random` returns a random indexed post that meets the match threshold.
 - Local fixture feeds: non-HTTP `feed_url` values in the manifest (paths relative to the manifest file) for offline `refresh`.
 - Curated `config/sources.yaml` allowlist (~27 enabled engineering feeds; Uber and LinkedIn disabled with documented reason).
 - `config/sources.smoke.yaml` for manual live-network smoke (three feeds).

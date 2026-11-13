@@ -33,6 +33,14 @@ func (a *App) FindJSON(match rank.MatchResult) FindJSON {
 }
 
 func (a *App) Find(ctx context.Context, query string) (rank.MatchResult, error) {
+	return a.find(ctx, query, false)
+}
+
+func (a *App) FindRandom(ctx context.Context, query string) (rank.MatchResult, error) {
+	return a.find(ctx, query, true)
+}
+
+func (a *App) find(ctx context.Context, query string, random bool) (rank.MatchResult, error) {
 	if err := a.refreshIfStale(ctx); err != nil {
 		return rank.MatchResult{}, err
 	}
@@ -58,7 +66,12 @@ func (a *App) Find(ctx context.Context, query string) (rank.MatchResult, error) 
 		}
 	}
 
-	match, err := rank.BestMatch(query, posts, rank.DefaultConfig())
+	var match rank.MatchResult
+	if random {
+		match, err = rank.RandomMatch(query, posts, rank.DefaultConfig(), nil)
+	} else {
+		match, err = rank.BestMatch(query, posts, rank.DefaultConfig())
+	}
 	if errors.Is(err, rank.ErrNoStrongMatch) {
 		return rank.MatchResult{}, ErrNoStrongMatch
 	}

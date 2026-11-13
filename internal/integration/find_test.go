@@ -60,6 +60,41 @@ func TestCLIFindReturnsExpectedPostAfterRefresh(t *testing.T) {
 	}
 }
 
+func TestCLIFindRandomReturnsAStrongMatch(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "blerg.db")
+	manifest := filepath.Join("testdata", "sources.yaml")
+	refreshCode := cli.RunWithSettings(cli.Settings{
+		DBPath:        dbPath,
+		SourcesPath:   manifest,
+		HTTPClient:    http.DefaultClient,
+		UserAgent:     app.DefaultUserAgent,
+		Staleness:     365 * 24 * time.Hour,
+		MaxConcurrent: 4,
+	}, []string{"--db", dbPath, "--sources", manifest, "refresh"}, io.Discard, io.Discard)
+	if refreshCode != 0 {
+		t.Fatalf("refresh exit %d", refreshCode)
+	}
+
+	var out bytes.Buffer
+	findCode := cli.RunWithSettings(cli.Settings{
+		DBPath:        dbPath,
+		SourcesPath:   manifest,
+		HTTPClient:    http.DefaultClient,
+		UserAgent:     app.DefaultUserAgent,
+		Staleness:     365 * 24 * time.Hour,
+		MaxConcurrent: 4,
+	}, []string{"--db", dbPath, "--sources", manifest, "find", "--random", "pooling postgres"}, &out, io.Discard)
+	if findCode != 0 {
+		t.Fatalf("find exit %d", findCode)
+	}
+	if !strings.Contains(out.String(), "Connection Pooling Deep Dive") {
+		t.Fatalf("stdout = %s", out.String())
+	}
+}
+
 func TestCLIFindNoStrongMatchExitCode(t *testing.T) {
 	t.Parallel()
 

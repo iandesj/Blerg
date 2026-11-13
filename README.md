@@ -49,11 +49,12 @@ Fetches every **enabled** source in the manifest, parses RSS/Atom, and upserts p
 
 ### `blerg find [query]`
 
-Ranks indexed posts (title, summary, categories) with a recency boost. Prints **one** result with a short `Match:` explanation. If the index is older than `--stale-after` (default **24h**), refreshes first.
+Ranks indexed posts (title, summary, categories) with a recency boost and prints the highest-scoring result, with a short `Match:` explanation. `--random` picks uniformly among posts that clear the same score threshold. If the index is older than `--stale-after` (default **24h**), refreshes first.
 
 | Flag | Purpose |
 |------|---------|
 | `--json` | Emit `title`, `url`, `source`, `date`, `match_explanation` as JSON |
+| `--random` | Pick uniformly among posts that meet the match threshold |
 
 | Exit code | Meaning |
 |-----------|---------|

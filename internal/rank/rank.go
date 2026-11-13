@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	mathrand "math/rand/v2"
 	"strings"
 	"time"
 	"unicode"
@@ -124,17 +125,56 @@ func explain(tokens []string, title, summary, categories string) string {
 	return strings.Join(parts, ", ")
 }
 
-func BestMatch(query string, posts []Post, cfg Config) (MatchResult, error) {
+// RandomMatch returns one post whose keyword score meets cfg.MinScore.
+// pick(n) chooses an index in [0, n). A nil pick uses math/rand/v2.
+// Candidates are in posts order.
+func RandomMatch(query string, posts []Post, cfg Config, pick func(n int) int) (MatchResult, error) {
 	tokens := Tokenize(query)
 	if len(tokens) == 0 || len(posts) == 0 {
 		return MatchResult{}, ErrNoStrongMatch
 	}
+	cfg = normalizeConfig(cfg)
+	if pick == nil {
+		pick = mathrand.IntN
+	}
+
+	var candidates []Post
+	for i := range posts {
+		p := posts[i]
+		if baseScore(tokens, p.Title, p.Summary, p.Categories) >= cfg.MinScore {
+			candidates = append(candidates, p)
+		}
+	}
+	if len(candidates) == 0 {
+		return MatchResult{}, ErrNoStrongMatch
+	}
+	idx := pick(len(candidates))
+	if idx < 0 || idx >= len(candidates) {
+		return MatchResult{}, fmt.Errorf("rank: picker returned %d for %d candidates", idx, len(candidates))
+	}
+	chosen := candidates[idx]
+	return MatchResult{
+		Post:        chosen,
+		Explanation: explain(tokens, chosen.Title, chosen.Summary, chosen.Categories),
+	}, nil
+}
+
+func normalizeConfig(cfg Config) Config {
 	if cfg.MinScore <= 0 {
 		cfg.MinScore = DefaultConfig().MinScore
 	}
 	if cfg.HalfLife <= 0 {
 		cfg.HalfLife = DefaultConfig().HalfLife
 	}
+	return cfg
+}
+
+func BestMatch(query string, posts []Post, cfg Config) (MatchResult, error) {
+	tokens := Tokenize(query)
+	if len(tokens) == 0 || len(posts) == 0 {
+		return MatchResult{}, ErrNoStrongMatch
+	}
+	cfg = normalizeConfig(cfg)
 
 	var best *Post
 	bestBase := 0

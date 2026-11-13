@@ -74,6 +74,44 @@ func TestBestMatchPrefersNewerOnNearTie(t *testing.T) {
 	}
 }
 
+func TestRandomMatchChoosesAmongStrongMatches(t *testing.T) {
+	t.Parallel()
+
+	posts := []rank.Post{
+		{ID: 1, Title: "Rust Memory Safety", Summary: "basics"},
+		{ID: 2, Title: "Unrelated", Summary: "mentions rust once"},
+		{ID: 3, Title: "Rust Ownership", Summary: "patterns"},
+	}
+
+	got, err := rank.RandomMatch("rust", posts, rank.DefaultConfig(), func(n int) int {
+		if n != 2 {
+			t.Fatalf("candidate count = %d, want 2", n)
+		}
+		return n - 1
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != 3 {
+		t.Fatalf("post id = %d, want last strong match 3", got.ID)
+	}
+	if !strings.Contains(got.Explanation, "title") {
+		t.Fatalf("explanation = %q", got.Explanation)
+	}
+}
+
+func TestRandomMatchNoStrongMatch(t *testing.T) {
+	t.Parallel()
+
+	posts := []rank.Post{
+		{ID: 1, Title: "Unrelated", Summary: "mentions quantum physics"},
+	}
+	_, err := rank.RandomMatch("quantum", posts, rank.DefaultConfig(), func(int) int { return 0 })
+	if !errors.Is(err, rank.ErrNoStrongMatch) {
+		t.Fatalf("err = %v, want ErrNoStrongMatch", err)
+	}
+}
+
 func TestBestMatchExplanationListsFields(t *testing.T) {
 	t.Parallel()
 
