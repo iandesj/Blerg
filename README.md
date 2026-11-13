@@ -21,6 +21,19 @@ go install ./cmd/blerg   # installs as `blerg` if GOPATH/bin is on PATH
 
 ## Quick start
 
+**Offline (repo fixtures, no network):**
+
+```bash
+go build -o bin/blerg ./cmd/blerg
+rm -f /tmp/blerg-test.db
+./bin/blerg --db /tmp/blerg-test.db --sources testdata/sources-local.yaml refresh
+./bin/blerg --db /tmp/blerg-test.db --sources testdata/sources-local.yaml find "pooling"
+```
+
+`testdata/sources.yaml` uses `https://example.com/...` URLs for integration tests with mocked HTTP only — the real CLI cannot use that manifest without a custom transport.
+
+**With live feeds:**
+
 ```bash
 blerg sources list                    # configured feeds + ingest status
 blerg refresh                         # fetch all enabled feeds into ~/.config/Blerg/blerg.db

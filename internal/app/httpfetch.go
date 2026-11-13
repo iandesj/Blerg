@@ -10,6 +10,9 @@ import (
 const maxHTTPRetries = 3
 
 func (a *App) fetchFeed(ctx context.Context, src Source) (*http.Response, error) {
+	if path, ok := a.localFeedPath(src.FeedURL); ok {
+		return a.readLocalFeed(ctx, path)
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, src.FeedURL, nil)
 	if err != nil {
 		return nil, err
