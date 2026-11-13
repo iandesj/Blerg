@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- GitHub Actions CI (test, vet, lint, build) and a tag-triggered release that publishes `blerg` archives. `scripts/install.sh` installs the latest release. `blerg --version` prints the release version.
 - MIT license (`LICENSE`).
 - `blerg find --interactive` (`-i`) browses strong matches with `j`/`k` and opens the selected post in the browser on Enter. The browser is colored unless `NO_COLOR` is set. `--random` with `--interactive` shuffles that list. Enter records `opened_at` on that post; refresh does not clear it.
 - `blerg find --random` returns a random indexed post that meets the match threshold.

@@ -62,8 +62,9 @@ func NewRootCommand(s Settings) *cobra.Command {
 	settings := s
 
 	root := &cobra.Command{
-		Use:   "blerg",
-		Short: "Blerg finds a single engineering blog post for a topic",
+		Use:     "blerg",
+		Short:   "Blerg finds a single engineering blog post for a topic",
+		Version: Version,
 	}
 	root.PersistentFlags().StringVar(&settings.DBPath, "db", settings.DBPath, "SQLite index path")
 	root.PersistentFlags().StringVar(&settings.SourcesPath, "sources", settings.SourcesPath, "Sources manifest path")

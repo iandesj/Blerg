@@ -1,23 +1,28 @@
 # Blerg
 
+[![CI](https://github.com/iandesj/Blerg/actions/workflows/ci.yml/badge.svg)](https://github.com/iandesj/Blerg/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/iandesj/Blerg)](https://github.com/iandesj/Blerg/releases)
+[![Go](https://img.shields.io/github/go-mod/go-version/iandesj/Blerg)](go.mod)
+[![Go Report Card](https://goreportcard.com/badge/github.com/iandesj/blerg)](https://goreportcard.com/report/github.com/iandesj/blerg)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 CLI that indexes engineering-blog RSS/Atom feeds and finds **one** relevant post for your keywords.
 
 ## Install
 
-**Requirements:** Go 1.25+ (see `go.mod`).
+Install the latest published release. This downloads the built binary. It does not clone the repo or compile it.
+
+Linux and macOS:
 
 ```bash
-git clone https://github.com/iandesj/Blerg.git && cd Blerg
-go build -o bin/blerg ./cmd/blerg
+curl -fsSL https://raw.githubusercontent.com/iandesj/Blerg/main/scripts/install.sh | sh
 ```
 
-Optional: [Devbox](https://www.jetify.com/devbox) for a pinned toolchain (`devbox shell`).
+The script picks `blerg_<os>_<arch>.tar.gz` from [the latest GitHub release](https://github.com/iandesj/Blerg/releases/latest) and copies `blerg` to `/usr/local/bin`, or to `~/.local/bin` if that directory is not writable. `blerg --version` prints the release tag without the leading `v`.
 
-Install the binary on your `PATH`:
+Windows: download `blerg_windows_amd64.zip` from that same release page.
 
-```bash
-go install ./cmd/blerg   # installs as `blerg` if GOPATH/bin is on PATH
-```
+A `vX.Y.Z` tag is what publishes a release. Until one exists, the install command has nothing to download.
 
 ## Quick start
 
@@ -103,7 +108,11 @@ Automated tests use fixture feeds under `testdata/` and do not require network a
 
 ## Development
 
+Build from a checkout when you are changing Blerg. Requires Go 1.26+ (`go.mod`). Optional: [Devbox](https://www.jetify.com/devbox) (`devbox shell`).
+
 ```bash
+git clone https://github.com/iandesj/Blerg.git && cd Blerg
+go build -o bin/blerg ./cmd/blerg
 go test ./...
 go vet ./...
 golangci-lint run ./...
