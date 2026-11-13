@@ -21,6 +21,7 @@ type Post struct {
 	Categories  string
 	SourceName  string
 	PublishedAt *time.Time
+	OpenedAt    *time.Time
 }
 
 type MatchResult struct {

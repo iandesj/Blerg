@@ -7,6 +7,7 @@ import (
 	"math/rand/v2"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/iandesj/blerg/internal/rank"
 	"golang.org/x/term"
@@ -84,7 +85,12 @@ func stepBrowse(index int, matches []rank.MatchResult, key browseKey, open func(
 		}
 		return index, "", false
 	case keyOpen:
-		return index, openNote(open(matches[index].URL)), false
+		if err := open(matches[index].URL); err != nil {
+			return index, err.Error(), false
+		}
+		opened := time.Now().UTC()
+		matches[index].OpenedAt = &opened
+		return index, openNote(nil), false
 	default:
 		return index, "", false
 	}
@@ -117,6 +123,11 @@ func renderFrame(match rank.MatchResult, index, total int, note string, color bo
 		published = match.PublishedAt.UTC().Format("2006-01-02")
 	}
 	writeField(&b, color, "Published", published, "")
+	opened := "not yet"
+	if match.OpenedAt != nil {
+		opened = match.OpenedAt.UTC().Format("2006-01-02 15:04")
+	}
+	writeField(&b, color, "Opened", opened, "")
 	if match.Explanation != "" {
 		writeField(&b, color, "Match", match.Explanation, "")
 	}

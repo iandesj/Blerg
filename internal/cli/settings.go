@@ -143,7 +143,12 @@ func browseMatches(cmd *cobra.Command, a *app.App, query string, random bool) er
 	if random {
 		shuffleMatches(matches, nil)
 	}
-	return runInteractive(cmd.InOrStdin(), cmd.OutOrStdout(), openBrowser, matches)
+	return runInteractive(cmd.InOrStdin(), cmd.OutOrStdout(), func(url string) error {
+		if err := openBrowser(url); err != nil {
+			return err
+		}
+		return a.MarkOpened(cmd.Context(), url, time.Now())
+	}, matches)
 }
 
 func printFindResult(cmd *cobra.Command, a *app.App, query string, random, jsonOutput bool) error {

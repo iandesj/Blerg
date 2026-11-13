@@ -52,6 +52,9 @@ func TestInteractiveMovesAndOpens(t *testing.T) {
 	if !strings.Contains(out.String(), "2/2") {
 		t.Fatalf("stdout missing position:\n%s", out.String())
 	}
+	if !strings.Contains(out.String(), "Opened: 20") {
+		t.Fatalf("stdout missing opened timestamp:\n%s", out.String())
+	}
 }
 
 func TestRenderFrameColorsTitleAndURL(t *testing.T) {

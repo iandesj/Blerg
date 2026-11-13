@@ -58,6 +58,33 @@ func (db *DB) migrate() error {
 			return fmt.Errorf("migrate: %w", err)
 		}
 	}
+	return db.ensureColumn("posts", "opened_at", `ALTER TABLE posts ADD COLUMN opened_at TEXT`)
+}
+
+func (db *DB) ensureColumn(table, column, alter string) error {
+	rows, err := db.sql.Query("PRAGMA table_info(" + table + ")")
+	if err != nil {
+		return fmt.Errorf("migrate: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var cid int
+		var name, ctype string
+		var notnull, pk int
+		var dflt sql.NullString
+		if err := rows.Scan(&cid, &name, &ctype, &notnull, &dflt, &pk); err != nil {
+			return fmt.Errorf("migrate: %w", err)
+		}
+		if name == column {
+			return rows.Err()
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("migrate: %w", err)
+	}
+	if _, err := db.sql.Exec(alter); err != nil {
+		return fmt.Errorf("migrate: %w", err)
+	}
 	return nil
 }
 
@@ -132,6 +159,7 @@ type Post struct {
 	PublishedAt *time.Time
 	Summary     string
 	Categories  string
+	OpenedAt    *time.Time
 }
 
 type PostDraft struct {
@@ -159,6 +187,23 @@ func (db *DB) UpsertPost(ctx context.Context, draft PostDraft) error {
 			categories = excluded.categories
 	`, draft.SourceID, draft.Title, draft.URL, pub, draft.Summary, draft.Categories)
 	return err
+}
+
+func (db *DB) MarkOpened(ctx context.Context, url string, at time.Time) error {
+	res, err := db.sql.ExecContext(ctx, `
+		UPDATE posts SET opened_at = ? WHERE url = ?
+	`, at.UTC().Format(time.RFC3339), url)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("mark opened: no post with url %s", url)
+	}
+	return nil
 }
 
 func (db *DB) SetSourceRefreshSuccess(ctx context.Context, sourceID int64) error {
@@ -219,7 +264,7 @@ type PostWithSource struct {
 func (db *DB) ListPostsWithSources(ctx context.Context) ([]PostWithSource, error) {
 	rows, err := db.sql.QueryContext(ctx, `
 		SELECT p.id, p.source_id, p.title, p.url, p.published_at,
-		       COALESCE(p.summary, ''), COALESCE(p.categories, ''), s.name
+		       COALESCE(p.summary, ''), COALESCE(p.categories, ''), p.opened_at, s.name
 		FROM posts p
 		JOIN sources s ON s.id = p.source_id
 		ORDER BY p.id
@@ -232,16 +277,13 @@ func (db *DB) ListPostsWithSources(ctx context.Context) ([]PostWithSource, error
 	var out []PostWithSource
 	for rows.Next() {
 		var row PostWithSource
-		var pub sql.NullString
+		var pub, opened sql.NullString
 		if err := rows.Scan(&row.ID, &row.SourceID, &row.Title, &row.URL, &pub,
-			&row.Summary, &row.Categories, &row.SourceName); err != nil {
+			&row.Summary, &row.Categories, &opened, &row.SourceName); err != nil {
 			return nil, err
 		}
-		if pub.Valid && pub.String != "" {
-			if t, err := time.Parse(time.RFC3339, pub.String); err == nil {
-				row.PublishedAt = &t
-			}
-		}
+		row.PublishedAt = parseStoredTime(pub)
+		row.OpenedAt = parseStoredTime(opened)
 		out = append(out, row)
 	}
 	return out, rows.Err()
@@ -249,7 +291,7 @@ func (db *DB) ListPostsWithSources(ctx context.Context) ([]PostWithSource, error
 
 func (db *DB) ListPosts(ctx context.Context) ([]Post, error) {
 	rows, err := db.sql.QueryContext(ctx, `
-		SELECT id, source_id, title, url, published_at, COALESCE(summary, ''), COALESCE(categories, '')
+		SELECT id, source_id, title, url, published_at, COALESCE(summary, ''), COALESCE(categories, ''), opened_at
 		FROM posts ORDER BY id
 	`)
 	if err != nil {
@@ -260,16 +302,24 @@ func (db *DB) ListPosts(ctx context.Context) ([]Post, error) {
 	var out []Post
 	for rows.Next() {
 		var row Post
-		var pub sql.NullString
-		if err := rows.Scan(&row.ID, &row.SourceID, &row.Title, &row.URL, &pub, &row.Summary, &row.Categories); err != nil {
+		var pub, opened sql.NullString
+		if err := rows.Scan(&row.ID, &row.SourceID, &row.Title, &row.URL, &pub, &row.Summary, &row.Categories, &opened); err != nil {
 			return nil, err
 		}
-		if pub.Valid && pub.String != "" {
-			if t, err := time.Parse(time.RFC3339, pub.String); err == nil {
-				row.PublishedAt = &t
-			}
-		}
+		row.PublishedAt = parseStoredTime(pub)
+		row.OpenedAt = parseStoredTime(opened)
 		out = append(out, row)
 	}
 	return out, rows.Err()
+}
+
+func parseStoredTime(raw sql.NullString) *time.Time {
+	if !raw.Valid || raw.String == "" {
+		return nil
+	}
+	t, err := time.Parse(time.RFC3339, raw.String)
+	if err != nil {
+		return nil
+	}
+	return &t
 }

@@ -50,7 +50,7 @@ Fetches every **enabled** source in the manifest, parses RSS/Atom, and upserts p
 
 ### `blerg find [query]`
 
-Ranks indexed posts (title, summary, categories) with a recency boost and prints the highest-scoring result, with a short `Match:` explanation. `--random` picks uniformly among posts that clear the same score threshold. `--interactive` (`-i`) lists those posts best-first: `j`/`k` move, Enter opens the current URL in the browser, `q` quits. `--random` with `--interactive` shuffles that list. The browser uses color unless `NO_COLOR` is set. If the index is older than `--stale-after` (default **24h**), refreshes first.
+Ranks indexed posts (title, summary, categories) with a recency boost and prints the highest-scoring result, with a short `Match:` explanation. `--random` picks uniformly among posts that clear the same score threshold. `--interactive` (`-i`) lists those posts best-first: `j`/`k` move, Enter opens the current URL in the browser and records when it was opened, `q` quits. `--random` with `--interactive` shuffles that list. The browser uses color unless `NO_COLOR` is set. If the index is older than `--stale-after` (default **24h**), refreshes first.
 
 | Flag | Purpose |
 |------|---------|

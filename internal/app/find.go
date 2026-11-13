@@ -40,6 +40,10 @@ func (a *App) FindRandom(ctx context.Context, query string) (rank.MatchResult, e
 	return a.find(ctx, query, true)
 }
 
+func (a *App) MarkOpened(ctx context.Context, url string, at time.Time) error {
+	return a.db.MarkOpened(ctx, url, at)
+}
+
 func (a *App) FindMatches(ctx context.Context, query string) ([]rank.MatchResult, error) {
 	posts, err := a.indexedPosts(ctx)
 	if err != nil {
@@ -97,6 +101,7 @@ func (a *App) indexedPosts(ctx context.Context) ([]rank.Post, error) {
 			Categories:  row.Categories,
 			SourceName:  row.SourceName,
 			PublishedAt: row.PublishedAt,
+			OpenedAt:    row.OpenedAt,
 		}
 	}
 	return posts, nil
