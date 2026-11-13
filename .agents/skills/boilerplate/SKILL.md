@@ -68,7 +68,7 @@ When editing code in a repo spawned from this template:
 Default hooks (see [pre-commit reference](references/pre-commit-hooks.md)):
 
 - **Gitleaks** — secret scan on commit (staged content).
-- **Lizard** — warnings-only complexity: CCN ≤ 10, length ≤ 80, params ≤ 5 on common source extensions.
+- **Lizard** — warnings-only complexity. This repo's limits are in `AGENTS.md`: production CCN ≤ 15, length ≤ 60, params ≤ 5; tests (`*_test.go`) CCN ≤ 20, length ≤ 120, params ≤ 5.
 - **pre-commit-hooks** — whitespace, EOF, YAML/JSON, merge conflicts, large files, private keys, LF endings.
 - **actionlint** — GitHub Actions workflows; remove that repo block if unused.
 

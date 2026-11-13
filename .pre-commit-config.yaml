@@ -28,6 +28,8 @@ repos:
 
   - repo: local
     hooks:
+      # Production code. Tests use lizard-complexity-tests.
+      # Limits are also stated in AGENTS.md. Do not raise them to land a change.
       - id: lizard-complexity
         name: Lizard complexity
         entry: lizard
@@ -37,10 +39,26 @@ repos:
         args:
           - --warnings_only
           - -C
-          - "10"
+          - "15"
           - --length
-          - "80"
+          - "60"
           - -a
           - "5"
         files: \.(c|cc|cpp|cxx|h|hpp|hxx|cs|go|java|js|jsx|kt|kts|php|py|rb|rs|scala|swift|ts|tsx|vue)$
+        exclude: (^vendor/|^node_modules/|^\.venv/|_test\.go$)
+      - id: lizard-complexity-tests
+        name: Lizard complexity (tests)
+        entry: lizard
+        language: python
+        additional_dependencies:
+          - lizard==1.26.0
+        args:
+          - --warnings_only
+          - -C
+          - "20"
+          - --length
+          - "120"
+          - -a
+          - "5"
+        files: _test\.go$
         exclude: ^(vendor/|node_modules/|\.venv/)

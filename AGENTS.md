@@ -20,6 +20,18 @@ This file orients automated coding assistants working in this repository.
 - Use TDD for new features, functionality, and behavioral changes: red → green → refactor (failing test, minimal pass, then improve design without changing behavior).
 - Write code that is easy to test, read, and change (clear boundaries, narrow units, explicit dependencies).
 - Do not add comments that justify why code exists; remove or refactor instead — comments only for non-obvious constraints or external contracts.
+- Stay inside the Lizard limits enforced by pre-commit. Split the function instead of raising a threshold, excluding a file, or skipping the hook.
+
+### Function size
+
+Lizard counts cyclomatic complexity (`if`, `for`, `case`, `&&`, `||`, plus one for the function) and non-comment lines. Parameter count includes the receiver. These are the same numbers as `.pre-commit-config.yaml`.
+
+| Code | Complexity | Length | Parameters |
+|------|------------|--------|------------|
+| Production (`*.go` and other hooked languages, not `*_test.go`) | ≤ 15 | ≤ 60 | ≤ 5 |
+| Tests (`*_test.go`) | ≤ 20 | ≤ 120 | ≤ 5 |
+
+15 is the working limit because each Go error check adds a branch, so a complexity of 10 flags ordinary constructors. It sits in the 10–20 band golangci-lint recommends for `gocyclo`. 60 lines matches `funlen`'s default for fitting a function on one screen. Tests are looser because fixture setup and table cases are long without being hard to follow. A test that is mostly branching, not data, still has to stay at or under 20.
 
 ## Commands
 

@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Lizard pre-commit limits are complexity ≤15 and length ≤60 for production code, and complexity ≤20 and length ≤120 for tests. Parameter limit stays at 5. See `AGENTS.md`.
 - `blerg refresh` exits 0 when at least one enabled source succeeds; non-zero only when every enabled source fails (partial failures on stderr).
 - Devbox `go@1.25` aligned with `go.mod` (required by `gofeed` v1.5).
 

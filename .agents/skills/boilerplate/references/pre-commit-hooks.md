@@ -23,19 +23,16 @@ YAML uses `args: [--unsafe]` to allow custom tags if needed later.
 - **When to keep:** `.github/workflows/*.yml` exist
 - **When to remove:** No GitHub Actions — delete entire repo block to avoid noise
 
-## Lizard (local hook)
+## Lizard (local hooks)
 
 - **Package:** `lizard==1.26.0` via `language: python` + `additional_dependencies`
-- **Hook id:** `lizard-complexity`
-- **Args:**
-  - `--warnings_only`
-  - `-C` `10` (cyclomatic complexity)
-  - `--length` `80` (lines per function)
-  - `-a` `5` (parameter count)
-- **Files:** Extension regex for common languages (C/C++, C#, Go, Java, JS/TS, Kotlin, PHP, Python, Ruby, Rust, Scala, Swift, Vue)
-- **Exclude:** `vendor/`, `node_modules/`, `.venv/`
+- **Hook ids:** `lizard-complexity` (production), `lizard-complexity-tests` (`*_test.go`)
+- **Production args:** `--warnings_only`, `-C` `15`, `--length` `60`, `-a` `5`
+- **Test args:** `--warnings_only`, `-C` `20`, `--length` `120`, `-a` `5`
+- **Files:** Extension regex for common languages (C/C++, C#, Go, Java, JS/TS, Kotlin, PHP, Python, Ruby, Rust, Scala, Swift, Vue). Tests are only `*_test.go`.
+- **Exclude:** `vendor/`, `node_modules/`, `.venv/`, and `*_test.go` on the production hook
 
-Lizard exits non-zero when warnings exceed thresholds. Empty repos skip (no matching files).
+The numbers and the reason for them live in `AGENTS.md`. Do not raise them to land a change. Lizard exits non-zero when warnings exceed thresholds. Empty repos skip (no matching files).
 
 ### Tuning guidance
 
