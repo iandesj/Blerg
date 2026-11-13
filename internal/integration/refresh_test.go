@@ -250,21 +250,6 @@ func TestCLIRefreshPartialSourceFailureExitsZero(t *testing.T) {
 	}
 }
 
-func fixtureFeedTransport(t *testing.T, feedURL, body string) roundTripFunc {
-	t.Helper()
-	return roundTripFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.String() != feedURL {
-			t.Fatalf("unexpected URL %s, want %s", req.URL, feedURL)
-		}
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       io.NopCloser(strings.NewReader(body)),
-			Header:     make(http.Header),
-			Request:    req,
-		}, nil
-	})
-}
-
 func readTestdata(t *testing.T, rel string) string {
 	t.Helper()
 	b, err := os.ReadFile(rel)
