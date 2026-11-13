@@ -9,9 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Curated `config/sources.yaml` allowlist (~27 enabled engineering feeds; Uber and LinkedIn disabled with documented reason).
+- `config/sources.smoke.yaml` for manual live-network smoke (three feeds).
+- ADR 0001 (RSS-first ingestion, allowlist scope) and updated [architecture](docs/architecture.md).
 - Conditional feed fetches (`ETag` / `Last-Modified`), bounded concurrent refresh, 429/503 backoff, `--stale-after` auto-refresh on find, and `find --json` output.
 - `blerg sources list` shows per-source last successful ingest time and last error (when present).
-- Shipped `config/sources.yaml` with validated engineering-blog feeds including AWS Architecture, Discord, and Pinterest (Uber and LinkedIn disabled after URL check).
+- `blerg find` ranks indexed posts by keyword overlap with recency tie-break, match threshold, and exit code `2` for no strong match.
+- `blerg refresh` ingests enabled RSS/Atom feeds into SQLite with partial-failure semantics.
 
 ### Changed
 

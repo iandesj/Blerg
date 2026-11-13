@@ -1,0 +1,11 @@
+# Small live-feed subset for manual smoke tests (see README).
+sources:
+  - name: Dan Luu
+    feed_url: https://danluu.com/atom.xml
+    enabled: true
+  - name: Martin Fowler
+    feed_url: https://martinfowler.com/feed.atom
+    enabled: true
+  - name: Stack Overflow Blog
+    feed_url: https://stackoverflow.blog/feed/
+    enabled: true

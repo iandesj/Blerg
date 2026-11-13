@@ -1,51 +1,102 @@
 # Blerg
 
-CLI that indexes engineering-blog feeds and finds **one** relevant post for your keywords.
+CLI that indexes engineering-blog RSS/Atom feeds and finds **one** relevant post for your keywords.
 
-## Getting started
+## Install
 
-1. Install [Devbox](https://www.jetify.com/devbox) (optional but recommended for a reproducible shell).
-2. Run `devbox shell` to enter the development environment.
-3. Install pre-commit hooks: `pre-commit install`
-4. Build and run the CLI:
+**Requirements:** Go 1.25+ (see `go.mod`).
 
 ```bash
+git clone https://github.com/iandesj/Blerg.git && cd Blerg
 go build -o bin/blerg ./cmd/blerg
-./bin/blerg --help
-./bin/blerg sources list
-./bin/blerg refresh
-./bin/blerg find "connection pooling"
 ```
 
-The default manifest is `config/sources.yaml` (curated company and independent engineering blogs). Override with `--sources`; see `config/sources.example.yaml` for a minimal template.
+Optional: [Devbox](https://www.jetify.com/devbox) for a pinned toolchain (`devbox shell`).
+
+Install the binary on your `PATH`:
+
+```bash
+go install ./cmd/blerg   # installs as `blerg` if GOPATH/bin is on PATH
+```
+
+## Quick start
+
+```bash
+blerg sources list                    # configured feeds + ingest status
+blerg refresh                         # fetch all enabled feeds into ~/.config/Blerg/blerg.db
+blerg find "connection pooling"       # one human-readable match
+blerg find --json "raft consensus"    # scripting output
+```
+
+Default feed allowlist: `config/sources.yaml` (~27 engineering blogs). Override with `--sources` or copy `config/sources.example.yaml` for a minimal custom manifest.
+
+## Commands
+
+### `blerg refresh`
+
+Fetches every **enabled** source in the manifest, parses RSS/Atom, and upserts posts by canonical URL. Uses stored `ETag` / `Last-Modified` when available. Exits **0** if at least one enabled source succeeds; **1** if every enabled source fails (partial failures are reported on stderr).
+
+### `blerg find [query]`
+
+Ranks indexed posts (title, summary, categories) with a recency boost. Prints **one** result with a short `Match:` explanation. If the index is older than `--stale-after` (default **24h**), refreshes first.
+
+| Flag | Purpose |
+|------|---------|
+| `--json` | Emit `title`, `url`, `source`, `date`, `match_explanation` as JSON |
+
+| Exit code | Meaning |
+|-----------|---------|
+| `0` | Match found |
+| `1` | Operational error (empty index, refresh failure, etc.) |
+| `2` | No strong match for query |
+
+### `blerg sources list`
+
+Tab-separated table: name, enabled, last successful refresh, last error, feed URL.
+
+## Global flags
+
+| Flag | Default | Purpose |
+|------|---------|---------|
+| `--db` | OS user config dir | SQLite index path |
+| `--sources` | `config/sources.yaml` | Feed manifest |
+| `--stale-after` | `24h` | Auto-refresh threshold for `find` |
+| `--max-concurrent` | `4` | Parallel feed fetches during `refresh` |
+
+## Manual smoke (live network)
+
+Smoke against **three** small public feeds without pulling the full allowlist:
+
+```bash
+export BLERG_DB=/tmp/blerg-smoke.db
+rm -f "$BLERG_DB"
+blerg --db "$BLERG_DB" --sources config/sources.smoke.yaml refresh
+blerg --db "$BLERG_DB" --sources config/sources.smoke.yaml find "latency"
+blerg --db "$BLERG_DB" --sources config/sources.smoke.yaml sources list
+```
+
+Automated tests use fixture feeds under `testdata/` and do not require network access (`go test ./...`).
 
 ## Repository layout
 
 | Path | Purpose |
 |------|---------|
-| `docs/` | Design notes, runbooks, and guides |
+| `config/sources.yaml` | Shipped engineering-blog allowlist |
+| `config/sources.smoke.yaml` | Small live-feed subset for manual smoke |
+| `docs/` | Architecture, ADRs, specs |
 | `AGENTS.md` | Instructions for AI coding assistants |
-| `CHANGELOG.md` | Notable changes by version |
-| `devbox.json` | Pin dev tools via Devbox |
-| `.pre-commit-config.yaml` | Local git hooks (Gitleaks, Lizard, sanity checks) |
-| `.agents/skills/boilerplate/` | Portable [Agent Skill](https://agentskills.io/) (cross-client discovery) |
-
-## Agent skill
-
-The `boilerplate` skill ([`.agents/skills/boilerplate/SKILL.md`](.agents/skills/boilerplate/SKILL.md)) documents how to scaffold, customize, and extend this template. It lives under **`.agents/skills/`**, the interop path Cursor, Copilot, Codex, and [Skills CLI](https://skills.sh/) scan (see [`.agents/README.md`](.agents/README.md)):
-
-```bash
-# After publishing this repo to GitHub:
-npx skills add <owner>/<repo>@boilerplate -g -y
-```
-
-See [`.agents/skills/README.md`](.agents/skills/README.md) for paths and global install.
+| `CHANGELOG.md` | Notable user-visible changes |
 
 ## Development
 
-- Document architecture and workflows under `docs/`.
-- Record user-visible changes in `CHANGELOG.md` (see [Keep a Changelog](https://keepachangelog.com/)).
-- Run `pre-commit run --all-files` before pushing when hooks are not installed.
+```bash
+go test ./...
+go vet ./...
+golangci-lint run ./...
+pre-commit run --all-files   # when hooks installed
+```
+
+See [architecture](docs/architecture.md) and [ADR 0001](docs/adr/0001-rss-first-allowlist-ingestion.md).
 
 ## License
 
