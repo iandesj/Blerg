@@ -40,30 +40,25 @@ func (a *App) FindRandom(ctx context.Context, query string) (rank.MatchResult, e
 	return a.find(ctx, query, true)
 }
 
-func (a *App) find(ctx context.Context, query string, random bool) (rank.MatchResult, error) {
-	if err := a.refreshIfStale(ctx); err != nil {
-		return rank.MatchResult{}, err
+func (a *App) FindMatches(ctx context.Context, query string) ([]rank.MatchResult, error) {
+	posts, err := a.indexedPosts(ctx)
+	if err != nil {
+		return nil, err
 	}
+	matches, err := rank.StrongMatches(query, posts, rank.DefaultConfig())
+	if errors.Is(err, rank.ErrNoStrongMatch) {
+		return nil, ErrNoStrongMatch
+	}
+	if err != nil {
+		return nil, err
+	}
+	return matches, nil
+}
 
-	rows, err := a.db.ListPostsWithSources(ctx)
+func (a *App) find(ctx context.Context, query string, random bool) (rank.MatchResult, error) {
+	posts, err := a.indexedPosts(ctx)
 	if err != nil {
 		return rank.MatchResult{}, err
-	}
-	if len(rows) == 0 {
-		return rank.MatchResult{}, fmt.Errorf("find: index is empty; run blerg refresh first")
-	}
-
-	posts := make([]rank.Post, len(rows))
-	for i, row := range rows {
-		posts[i] = rank.Post{
-			ID:          row.ID,
-			Title:       row.Title,
-			URL:         row.URL,
-			Summary:     row.Summary,
-			Categories:  row.Categories,
-			SourceName:  row.SourceName,
-			PublishedAt: row.PublishedAt,
-		}
 	}
 
 	var match rank.MatchResult
@@ -79,6 +74,32 @@ func (a *App) find(ctx context.Context, query string, random bool) (rank.MatchRe
 		return rank.MatchResult{}, err
 	}
 	return match, nil
+}
+
+func (a *App) indexedPosts(ctx context.Context) ([]rank.Post, error) {
+	if err := a.refreshIfStale(ctx); err != nil {
+		return nil, err
+	}
+	rows, err := a.db.ListPostsWithSources(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, fmt.Errorf("find: index is empty; run blerg refresh first")
+	}
+	posts := make([]rank.Post, len(rows))
+	for i, row := range rows {
+		posts[i] = rank.Post{
+			ID:          row.ID,
+			Title:       row.Title,
+			URL:         row.URL,
+			Summary:     row.Summary,
+			Categories:  row.Categories,
+			SourceName:  row.SourceName,
+			PublishedAt: row.PublishedAt,
+		}
+	}
+	return posts, nil
 }
 
 func (a *App) refreshIfStale(ctx context.Context) error {

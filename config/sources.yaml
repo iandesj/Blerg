@@ -109,6 +109,11 @@ sources:
     feed_url: https://danluu.com/atom.xml
     enabled: true
 
+  # Publishing stopped 2021-02-08; the feed still serves that archive window.
+  - name: The Morning Paper
+    feed_url: https://blog.acolyer.org/feed/
+    enabled: true
+
   # Disabled: public feed URL returned HTTP 404 when checked (2026-03).
   - name: Uber Engineering
     feed_url: https://eng.uber.com/feed/

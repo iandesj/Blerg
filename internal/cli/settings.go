@@ -104,11 +104,15 @@ func newRefreshCommand(s *Settings) *cobra.Command {
 func newFindCommand(s *Settings) *cobra.Command {
 	var jsonOutput bool
 	var random bool
+	var interactive bool
 	cmd := &cobra.Command{
 		Use:   "find [query]",
 		Short: "Return one indexed post for a query",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if interactive && jsonOutput {
+				return fmt.Errorf("find: --interactive cannot be combined with --json")
+			}
 			a, err := s.openApp(cmd.Context())
 			if err != nil {
 				return err
@@ -116,30 +120,53 @@ func newFindCommand(s *Settings) *cobra.Command {
 			defer func() { _ = a.Close() }()
 
 			query := strings.Join(args, " ")
-			var match rank.MatchResult
-			if random {
-				match, err = a.FindRandom(cmd.Context(), query)
-			} else {
-				match, err = a.Find(cmd.Context(), query)
+			if interactive {
+				return browseMatches(cmd, a, query, random)
 			}
-			if err != nil {
-				if errors.Is(err, app.ErrNoStrongMatch) {
-					return withExitCode(ExitNoMatch, err)
-				}
-				return err
-			}
-			if jsonOutput {
-				enc := json.NewEncoder(cmd.OutOrStdout())
-				enc.SetEscapeHTML(false)
-				return enc.Encode(a.FindJSON(match))
-			}
-			_, _ = fmt.Fprint(cmd.OutOrStdout(), formatFindHuman(match))
-			return nil
+			return printFindResult(cmd, a, query, random, jsonOutput)
 		},
 	}
 	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Emit find result as JSON")
-	cmd.Flags().BoolVar(&random, "random", false, "Return a random post that meets the match threshold")
+	cmd.Flags().BoolVar(&random, "random", false, "Return a random strong match, or shuffle the interactive list")
+	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Browse strong matches with j/k and open the selection in a browser")
 	return cmd
+}
+
+func browseMatches(cmd *cobra.Command, a *app.App, query string, random bool) error {
+	matches, err := a.FindMatches(cmd.Context(), query)
+	if err != nil {
+		if errors.Is(err, app.ErrNoStrongMatch) {
+			return withExitCode(ExitNoMatch, err)
+		}
+		return err
+	}
+	if random {
+		shuffleMatches(matches, nil)
+	}
+	return runInteractive(cmd.InOrStdin(), cmd.OutOrStdout(), openBrowser, matches)
+}
+
+func printFindResult(cmd *cobra.Command, a *app.App, query string, random, jsonOutput bool) error {
+	var match rank.MatchResult
+	var err error
+	if random {
+		match, err = a.FindRandom(cmd.Context(), query)
+	} else {
+		match, err = a.Find(cmd.Context(), query)
+	}
+	if err != nil {
+		if errors.Is(err, app.ErrNoStrongMatch) {
+			return withExitCode(ExitNoMatch, err)
+		}
+		return err
+	}
+	if jsonOutput {
+		enc := json.NewEncoder(cmd.OutOrStdout())
+		enc.SetEscapeHTML(false)
+		return enc.Encode(a.FindJSON(match))
+	}
+	_, _ = fmt.Fprint(cmd.OutOrStdout(), formatFindHuman(match))
+	return nil
 }
 
 func formatSourceTimestamp(t *time.Time) string {

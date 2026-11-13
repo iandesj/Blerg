@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	mathrand "math/rand/v2"
+	"slices"
 	"strings"
 	"time"
 	"unicode"
@@ -170,45 +171,73 @@ func normalizeConfig(cfg Config) Config {
 }
 
 func BestMatch(query string, posts []Post, cfg Config) (MatchResult, error) {
+	matches, err := StrongMatches(query, posts, cfg)
+	if err != nil {
+		return MatchResult{}, err
+	}
+	return matches[0], nil
+}
+
+type scoredPost struct {
+	post Post
+	eff  float64
+}
+
+func StrongMatches(query string, posts []Post, cfg Config) ([]MatchResult, error) {
 	tokens := Tokenize(query)
 	if len(tokens) == 0 || len(posts) == 0 {
-		return MatchResult{}, ErrNoStrongMatch
+		return nil, ErrNoStrongMatch
 	}
 	cfg = normalizeConfig(cfg)
 
-	var best *Post
-	bestBase := 0
-	bestEffective := 0.0
+	var scored []scoredPost
 	for i := range posts {
-		p := &posts[i]
+		p := posts[i]
 		base := baseScore(tokens, p.Title, p.Summary, p.Categories)
-		if base == 0 {
+		if base < cfg.MinScore {
 			continue
 		}
-		eff := effectiveScore(base, p.PublishedAt, cfg.HalfLife)
-		if best == nil || eff > bestEffective {
-			best = p
-			bestBase = base
-			bestEffective = eff
-			continue
-		}
-		if eff == bestEffective {
-			if newer(p.PublishedAt, best.PublishedAt) {
-				best = p
-				bestBase = base
-			} else if sameInstant(p.PublishedAt, best.PublishedAt) && p.ID < best.ID {
-				best = p
-				bestBase = base
-			}
+		scored = append(scored, scoredPost{
+			post: p,
+			eff:  effectiveScore(base, p.PublishedAt, cfg.HalfLife),
+		})
+	}
+	if len(scored) == 0 {
+		return nil, ErrNoStrongMatch
+	}
+	slices.SortStableFunc(scored, compareScored)
+
+	out := make([]MatchResult, len(scored))
+	for i, item := range scored {
+		out[i] = MatchResult{
+			Post:        item.post,
+			Explanation: explain(tokens, item.post.Title, item.post.Summary, item.post.Categories),
 		}
 	}
-	if best == nil || bestBase < cfg.MinScore {
-		return MatchResult{}, ErrNoStrongMatch
+	return out, nil
+}
+
+func compareScored(a, b scoredPost) int {
+	if a.eff != b.eff {
+		if a.eff > b.eff {
+			return -1
+		}
+		return 1
 	}
-	return MatchResult{
-		Post:        *best,
-		Explanation: explain(tokens, best.Title, best.Summary, best.Categories),
-	}, nil
+	if newer(a.post.PublishedAt, b.post.PublishedAt) {
+		return -1
+	}
+	if newer(b.post.PublishedAt, a.post.PublishedAt) {
+		return 1
+	}
+	switch {
+	case a.post.ID < b.post.ID:
+		return -1
+	case a.post.ID > b.post.ID:
+		return 1
+	default:
+		return 0
+	}
 }
 
 func newer(a, b *time.Time) bool {
@@ -219,15 +248,4 @@ func newer(a, b *time.Time) bool {
 		return true
 	}
 	return a.UTC().After(b.UTC())
-}
-
-func sameInstant(a, b *time.Time) bool {
-	switch {
-	case a == nil && b == nil:
-		return true
-	case a == nil || b == nil:
-		return false
-	default:
-		return a.UTC().Equal(b.UTC())
-	}
 }

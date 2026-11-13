@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `blerg find --interactive` (`-i`) browses strong matches with `j`/`k` and opens the selected post in the browser on Enter. The browser is colored unless `NO_COLOR` is set. `--random` with `--interactive` shuffles that list.
 - `blerg find --random` returns a random indexed post that meets the match threshold.
 - Local fixture feeds: non-HTTP `feed_url` values in the manifest (paths relative to the manifest file) for offline `refresh`.
-- Curated `config/sources.yaml` allowlist (~27 enabled engineering feeds; Uber and LinkedIn disabled with documented reason).
+- Curated `config/sources.yaml` allowlist (~28 enabled engineering feeds; Uber and LinkedIn disabled with documented reason).
+- The Morning Paper (`https://blog.acolyer.org/feed/`) on the allowlist. New posts stopped in February 2021; the feed still returns that archive window.
 - `config/sources.smoke.yaml` for manual live-network smoke (three feeds).
 - ADR 0001 (RSS-first ingestion, allowlist scope) and updated [architecture](docs/architecture.md).
 - Conditional feed fetches (`ETag` / `Last-Modified`), bounded concurrent refresh, 429/503 backoff, `--stale-after` auto-refresh on find, and `find --json` output.

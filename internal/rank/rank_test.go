@@ -74,6 +74,29 @@ func TestBestMatchPrefersNewerOnNearTie(t *testing.T) {
 	}
 }
 
+func TestStrongMatchesOrdersByScoreAndDropsWeak(t *testing.T) {
+	t.Parallel()
+
+	old := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
+	recent := time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)
+	posts := []rank.Post{
+		{ID: 1, Title: "Rust Memory Safety", Summary: "basics", PublishedAt: &old},
+		{ID: 2, Title: "Unrelated", Summary: "mentions rust once", PublishedAt: &recent},
+		{ID: 3, Title: "Rust Memory Patterns", Summary: "advanced", PublishedAt: &recent},
+	}
+
+	got, err := rank.StrongMatches("rust memory", posts, rank.DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("len = %d, want 2", len(got))
+	}
+	if got[0].ID != 3 || got[1].ID != 1 {
+		t.Fatalf("order = %d, %d", got[0].ID, got[1].ID)
+	}
+}
+
 func TestRandomMatchChoosesAmongStrongMatches(t *testing.T) {
 	t.Parallel()
 

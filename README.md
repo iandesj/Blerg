@@ -36,10 +36,11 @@ rm -f /tmp/blerg-test.db
 blerg sources list                    # configured feeds + ingest status
 blerg refresh                         # fetch all enabled feeds into ~/.config/Blerg/blerg.db
 blerg find "connection pooling"       # one human-readable match
+blerg find -i "connection pooling"    # j/k to browse, enter opens the browser
 blerg find --json "raft consensus"    # scripting output
 ```
 
-Default feed allowlist: `config/sources.yaml` (~27 engineering blogs). Override with `--sources` or copy `config/sources.example.yaml` for a minimal custom manifest.
+Default feed allowlist: `config/sources.yaml` (~28 engineering blogs). Override with `--sources` or copy `config/sources.example.yaml` for a minimal custom manifest.
 
 ## Commands
 
@@ -49,12 +50,13 @@ Fetches every **enabled** source in the manifest, parses RSS/Atom, and upserts p
 
 ### `blerg find [query]`
 
-Ranks indexed posts (title, summary, categories) with a recency boost and prints the highest-scoring result, with a short `Match:` explanation. `--random` picks uniformly among posts that clear the same score threshold. If the index is older than `--stale-after` (default **24h**), refreshes first.
+Ranks indexed posts (title, summary, categories) with a recency boost and prints the highest-scoring result, with a short `Match:` explanation. `--random` picks uniformly among posts that clear the same score threshold. `--interactive` (`-i`) lists those posts best-first: `j`/`k` move, Enter opens the current URL in the browser, `q` quits. `--random` with `--interactive` shuffles that list. The browser uses color unless `NO_COLOR` is set. If the index is older than `--stale-after` (default **24h**), refreshes first.
 
 | Flag | Purpose |
 |------|---------|
 | `--json` | Emit `title`, `url`, `source`, `date`, `match_explanation` as JSON |
-| `--random` | Pick uniformly among posts that meet the match threshold |
+| `--random` | Pick one strong match at random, or shuffle the `--interactive` list |
+| `--interactive`, `-i` | Browse strong matches and open one in the browser |
 
 | Exit code | Meaning |
 |-----------|---------|
