@@ -2,18 +2,21 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/iandesj/blerg/internal/rank"
 )
 
-func (a *App) Find(ctx context.Context, query string) (rank.Post, error) {
+var ErrNoStrongMatch = errors.New("find: no strong match for query")
+
+func (a *App) Find(ctx context.Context, query string) (rank.MatchResult, error) {
 	rows, err := a.db.ListPostsWithSources(ctx)
 	if err != nil {
-		return rank.Post{}, err
+		return rank.MatchResult{}, err
 	}
 	if len(rows) == 0 {
-		return rank.Post{}, fmt.Errorf("find: index is empty; run blerg refresh first")
+		return rank.MatchResult{}, fmt.Errorf("find: index is empty; run blerg refresh first")
 	}
 
 	posts := make([]rank.Post, len(rows))
@@ -29,9 +32,12 @@ func (a *App) Find(ctx context.Context, query string) (rank.Post, error) {
 		}
 	}
 
-	match, ok := rank.BestMatch(query, posts)
-	if !ok {
-		return rank.Post{}, fmt.Errorf("find: no matching posts for query")
+	match, err := rank.BestMatch(query, posts, rank.DefaultConfig())
+	if errors.Is(err, rank.ErrNoStrongMatch) {
+		return rank.MatchResult{}, ErrNoStrongMatch
+	}
+	if err != nil {
+		return rank.MatchResult{}, err
 	}
 	return match, nil
 }

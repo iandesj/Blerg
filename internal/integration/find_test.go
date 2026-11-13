@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"bytes"
+	"io"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -48,9 +49,44 @@ func TestCLIFindReturnsExpectedPostAfterRefresh(t *testing.T) {
 		"https://example.com/posts/pooling",
 		"Fixture Engineering Blog",
 		"2024",
+		"Match:",
 	} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("stdout missing %q:\n%s", want, text)
 		}
+	}
+}
+
+func TestCLIFindNoStrongMatchExitCode(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "blerg.db")
+	manifest := filepath.Join("testdata", "sources.yaml")
+	fixtureBody := readTestdata(t, "testdata/feeds/engineering-posts.rss")
+	transport := fixtureFeedTransport(t, "https://example.com/engineering/feed.xml", fixtureBody)
+
+	refreshCode := cli.RunWithSettings(cli.Settings{
+		DBPath:      dbPath,
+		SourcesPath: manifest,
+		HTTPClient:  &http.Client{Transport: transport},
+		UserAgent:   app.DefaultUserAgent,
+	}, []string{"--db", dbPath, "--sources", manifest, "refresh"}, io.Discard, io.Discard)
+	if refreshCode != 0 {
+		t.Fatalf("refresh exit %d", refreshCode)
+	}
+
+	var errOut bytes.Buffer
+	findCode := cli.RunWithSettings(cli.Settings{
+		DBPath:      dbPath,
+		SourcesPath: manifest,
+		HTTPClient:  &http.Client{Transport: transport},
+		UserAgent:   app.DefaultUserAgent,
+	}, []string{"--db", dbPath, "--sources", manifest, "find", "tears"}, io.Discard, &errOut)
+	if findCode != cli.ExitNoMatch {
+		t.Fatalf("find exit %d, want %d stderr=%q", findCode, cli.ExitNoMatch, errOut.String())
+	}
+	if !strings.Contains(errOut.String(), "no strong match") {
+		t.Fatalf("stderr = %q", errOut.String())
 	}
 }

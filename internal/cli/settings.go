@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -104,6 +105,9 @@ func newFindCommand(s *Settings) *cobra.Command {
 
 			match, err := a.Find(cmd.Context(), strings.Join(args, " "))
 			if err != nil {
+				if errors.Is(err, app.ErrNoStrongMatch) {
+					return withExitCode(ExitNoMatch, err)
+				}
 				return err
 			}
 			_, _ = fmt.Fprint(cmd.OutOrStdout(), formatFindHuman(match))
@@ -112,7 +116,7 @@ func newFindCommand(s *Settings) *cobra.Command {
 	}
 }
 
-func formatFindHuman(p rank.Post) string {
+func formatFindHuman(p rank.MatchResult) string {
 	var b strings.Builder
 	_, _ = fmt.Fprintf(&b, "Title: %s\n", p.Title)
 	_, _ = fmt.Fprintf(&b, "URL: %s\n", p.URL)
@@ -121,6 +125,9 @@ func formatFindHuman(p rank.Post) string {
 		_, _ = fmt.Fprintf(&b, "Published: %s\n", p.PublishedAt.UTC().Format("2006-01-02"))
 	} else {
 		_, _ = fmt.Fprintln(&b, "Published: unknown")
+	}
+	if p.Explanation != "" {
+		_, _ = fmt.Fprintf(&b, "Match: %s\n", p.Explanation)
 	}
 	return b.String()
 }
@@ -168,9 +175,9 @@ func Run(args []string) int {
 	root.SetArgs(args)
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		return 1
+		return exitCodeFor(err)
 	}
-	return 0
+	return ExitSuccess
 }
 
 func RunWithSettings(s Settings, args []string, stdout, stderr io.Writer) int {
@@ -186,7 +193,7 @@ func RunWithSettings(s Settings, args []string, stdout, stderr io.Writer) int {
 		if stderr != nil {
 			_, _ = fmt.Fprintln(stderr, err)
 		}
-		return 1
+		return exitCodeFor(err)
 	}
-	return 0
+	return ExitSuccess
 }

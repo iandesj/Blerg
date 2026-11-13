@@ -1,6 +1,8 @@
 package rank_test
 
 import (
+	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,12 +19,15 @@ func TestScorePrefersTitleAndCategoryMatches(t *testing.T) {
 		{ID: 2, Title: "Raft For Humans", Summary: "Consensus without tears.", PublishedAt: &newer},
 	}
 
-	got, ok := rank.BestMatch("pooling postgres", posts)
-	if !ok {
-		t.Fatal("expected a match")
+	got, err := rank.BestMatch("pooling postgres", posts, rank.DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
 	}
 	if got.Title != "Connection Pooling Deep Dive" {
 		t.Fatalf("title = %q", got.Title)
+	}
+	if got.Explanation == "" {
+		t.Fatal("expected match explanation")
 	}
 }
 
@@ -32,8 +37,55 @@ func TestBestMatchNoOverlap(t *testing.T) {
 	posts := []rank.Post{
 		{ID: 1, Title: "Unrelated", Summary: "Nothing here"},
 	}
-	_, ok := rank.BestMatch("quantum", posts)
-	if ok {
-		t.Fatal("expected no match")
+	_, err := rank.BestMatch("quantum", posts, rank.DefaultConfig())
+	if !errors.Is(err, rank.ErrNoStrongMatch) {
+		t.Fatalf("err = %v, want ErrNoStrongMatch", err)
+	}
+}
+
+func TestBestMatchBelowThreshold(t *testing.T) {
+	t.Parallel()
+
+	posts := []rank.Post{
+		{ID: 1, Title: "Unrelated", Summary: "mentions quantum physics"},
+	}
+	_, err := rank.BestMatch("quantum", posts, rank.DefaultConfig())
+	if !errors.Is(err, rank.ErrNoStrongMatch) {
+		t.Fatalf("err = %v, want ErrNoStrongMatch", err)
+	}
+}
+
+func TestBestMatchPrefersNewerOnNearTie(t *testing.T) {
+	t.Parallel()
+
+	old := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
+	recent := time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)
+	posts := []rank.Post{
+		{ID: 1, Title: "Rust Memory Safety", Summary: "basics", PublishedAt: &old},
+		{ID: 2, Title: "Rust Memory Patterns", Summary: "advanced", PublishedAt: &recent},
+	}
+
+	got, err := rank.BestMatch("rust memory", posts, rank.DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.ID != 2 {
+		t.Fatalf("post id = %d, want newer post 2", got.ID)
+	}
+}
+
+func TestBestMatchExplanationListsFields(t *testing.T) {
+	t.Parallel()
+
+	pub := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+	posts := []rank.Post{
+		{ID: 1, Title: "Go Channels", Summary: "concurrency", Categories: "go", PublishedAt: &pub},
+	}
+	got, err := rank.BestMatch("go channels", posts, rank.DefaultConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(got.Explanation, "title") {
+		t.Fatalf("explanation = %q", got.Explanation)
 	}
 }
