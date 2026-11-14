@@ -47,7 +47,7 @@ blerg find -i "connection pooling"    # j/k to browse, enter opens the browser
 blerg find --json "raft consensus"    # scripting output
 ```
 
-Default feed allowlist: `config/sources.yaml` (~28 engineering blogs). Override with `--sources` or copy `config/sources.example.yaml` for a minimal custom manifest.
+The first `refresh`, `find`, or `sources` command installs the shipped allowlist (~28 engineering blogs) at `sources.yaml` in the OS user config directory (`~/.config/Blerg` on Linux), beside the index. An existing file is left unchanged. Override that path with `--sources`, or edit the installed file. `config/sources.example.yaml` is a minimal manifest.
 
 ## Commands
 
@@ -84,7 +84,7 @@ Tab-separated table: name, enabled, last successful refresh, last error, feed UR
 | Flag | Default | Purpose |
 |------|---------|---------|
 | `--db` | OS user config dir | SQLite index path |
-| `--sources` | `config/sources.yaml` | Feed manifest |
+| `--sources` | OS user config dir | Feed manifest. Shipped allowlist is installed when the file is missing |
 | `--stale-after` | `24h` | Auto-refresh threshold for `find` |
 | `--max-concurrent` | `4` | Parallel feed fetches during `refresh` |
 
@@ -106,7 +106,7 @@ Automated tests use fixture feeds under `testdata/` and do not require network a
 
 | Path | Purpose |
 |------|---------|
-| `config/sources.yaml` | Shipped engineering-blog allowlist |
+| `config/sources.yaml` | Shipped allowlist, installed into the user config directory when `sources.yaml` is missing |
 | `config/sources.smoke.yaml` | Small live-feed subset for manual smoke |
 | `docs/` | Architecture, ADRs, specs |
 | `AGENTS.md` | Instructions for AI coding assistants |

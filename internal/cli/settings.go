@@ -32,9 +32,13 @@ func defaultSettings() (Settings, error) {
 	if err != nil {
 		return Settings{}, err
 	}
+	sourcesPath, err := app.DefaultSourcesPath()
+	if err != nil {
+		return Settings{}, err
+	}
 	return Settings{
 		DBPath:        dbPath,
-		SourcesPath:   "config/sources.yaml",
+		SourcesPath:   sourcesPath,
 		HTTPClient:    http.DefaultClient,
 		UserAgent:     app.DefaultUserAgent,
 		Staleness:     app.DefaultStaleness,
@@ -43,6 +47,9 @@ func defaultSettings() (Settings, error) {
 }
 
 func (s *Settings) openApp(ctx context.Context) (*app.App, error) {
+	if err := app.EnsureDefaultSources(s.SourcesPath); err != nil {
+		return nil, err
+	}
 	return app.New(ctx, app.Options{
 		DBPath:        s.DBPath,
 		SourcesPath:   s.SourcesPath,

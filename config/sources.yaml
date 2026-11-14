@@ -1,3 +1,4 @@
+# Seed allowlist. Blerg copies this file into the OS user config directory when sources.yaml is missing there.
 # Curated engineering-blog RSS/Atom feeds for local indexing.
 # Disabled entries stayed in the manifest after feed URL checks failed (see comment per source).
 sources:

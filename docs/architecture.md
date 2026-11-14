@@ -13,7 +13,7 @@ Blerg is a local CLI that maintains a SQLite index of posts from curated enginee
 ```mermaid
 flowchart LR
   CLI[cmd/blerg CLI] --> App[internal/app]
-  App --> Config[config/sources.yaml]
+  App --> Config["user config sources.yaml"]
   App --> Feed[internal/feed]
   App --> Rank[internal/rank]
   App --> Store[(SQLite internal/store)]
@@ -31,7 +31,7 @@ flowchart LR
 | `internal/feed` | Parse RSS/Atom into normalized entries. |
 | `internal/store` | SQLite schema: sources (with cache validators, ingest status), posts (unique by URL). |
 | `internal/rank` | Keyword scoring, recency boost, match threshold, explanation. |
-| `config/sources.yaml` | Curated allowlist shipped with the repo. |
+| `config/sources.yaml` | Curated allowlist embedded in the binary and installed under the user config directory when `sources.yaml` is missing. |
 
 ## Command flow
 
@@ -43,7 +43,7 @@ flowchart LR
 
 ## Cross-cutting concerns
 
-- **Configuration:** `--db`, `--sources`, `--stale-after`, `--max-concurrent`; default manifest `config/sources.yaml`.
+- **Configuration:** `--db`, `--sources`, `--stale-after`, `--max-concurrent`. `--db` and `--sources` default under the OS user config directory (`~/.config/Blerg` on Linux). When that `sources.yaml` is missing, Blerg installs the shipped allowlist and leaves an existing file unchanged.
 - **Observability:** CLI stdout/stderr only; per-source `last_error` in DB and `sources list`.
 - **Security:** No secrets in v1; `User-Agent` identifies the client; local SQLite under user config dir by default.
 

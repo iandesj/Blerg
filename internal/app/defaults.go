@@ -15,9 +15,17 @@ const (
 )
 
 func DefaultDBPath() (string, error) {
+	return joinConfig("blerg.db")
+}
+
+func DefaultSourcesPath() (string, error) {
+	return joinConfig("sources.yaml")
+}
+
+func joinConfig(name string) (string, error) {
 	dir, err := os.UserConfigDir()
 	if err != nil {
 		return "", fmt.Errorf("user config dir: %w", err)
 	}
-	return filepath.Join(dir, "Blerg", "blerg.db"), nil
+	return filepath.Join(dir, "Blerg", name), nil
 }
