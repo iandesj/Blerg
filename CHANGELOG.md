@@ -25,7 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `--sources` defaults to `sources.yaml` in the OS user config directory (`~/.config/Blerg` on Linux). The first `refresh`, `find`, or `sources` command installs the shipped `config/sources.yaml` there when the file is missing. An existing file is not overwritten.
 - Lizard pre-commit limits are complexity ≤15 and length ≤60 for production code, and complexity ≤20 and length ≤120 for tests. Parameter limit stays at 5. See `AGENTS.md`.
 - `blerg refresh` exits 0 when at least one enabled source succeeds; non-zero only when every enabled source fails (partial failures on stderr).
 - Devbox `go@1.25` aligned with `go.mod` (required by `gofeed` v1.5).
@@ -50,6 +49,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Gitleaks secret scanning via pre-commit.
 - Development rules in `AGENTS.md` (commits, TDD, code quality, comments).
 
+## [0.3.0] - 2026-11-14
+
+### Changed
+
+- `--sources` defaults to `sources.yaml` in the OS user config directory (`~/.config/Blerg` on Linux). The first `refresh`, `find`, or `sources` command installs the shipped `config/sources.yaml` there when the file is missing. An existing file is not overwritten.
+
 ## [0.2.0] - 2026-11-13
 
 ### Added
@@ -62,6 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First tagged release after you add application code.
 
-[Unreleased]: https://github.com/iandesj/Blerg/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/iandesj/Blerg/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/iandesj/Blerg/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/iandesj/Blerg/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/iandesj/Blerg/releases/tag/v0.1.0
